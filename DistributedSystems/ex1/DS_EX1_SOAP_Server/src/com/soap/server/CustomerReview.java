@@ -1,4 +1,4 @@
-package DatabaseObjects;
+package com.soap.server;
 
 import java.io.Serializable;
 
@@ -22,6 +22,16 @@ public class CustomerReview implements Serializable {
 	///////////////////////////////////////////////////
 	public int getId() {
 		return id;
+	}
+	public void setId(int id) {
+		this.id = id;
+	}
+	
+	public int getProductID() {
+		return productID;
+	}
+	public void setProductID(int productID) {
+		this.productID = productID;
 	}
 	
 	public String getReview() {

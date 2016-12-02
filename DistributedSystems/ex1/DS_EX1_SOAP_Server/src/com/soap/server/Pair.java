@@ -1,4 +1,4 @@
-package DatabaseObjects;
+package com.soap.server;
 
 import java.io.Serializable;
 
