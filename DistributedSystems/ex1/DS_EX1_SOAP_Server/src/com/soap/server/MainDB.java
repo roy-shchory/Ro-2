@@ -319,11 +319,7 @@ public class MainDB {
 	// 19
 	@WebMethod
 	public Collection<Pair<Integer, Integer>> getProductIDsAndStoreIDsFromCart(int userID) throws DatabaseException {
-		//return getUserByID(userID).getAllItemsInCart();
-		Collection<Pair<Integer, Integer>> a = new ArrayList<>();
-		a.add(new Pair<Integer, Integer>(1, 2));
-		a.add(new Pair<Integer, Integer>(11, 22));
-		return a;
+		return getUserByID(userID).getAllItemsInCart();
 	}
 	
 	// 20
