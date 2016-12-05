@@ -4,15 +4,20 @@ import com.rest.server.model.*;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -33,7 +38,6 @@ public class MainDbResource {
 	// 1
 	@POST
 	@Path("/users")
-	@Consumes(MediaType.APPLICATION_JSON)
 	public Response addNewUser(User newUser, @Context UriInfo uriInfo) {
 		User user = mainDB.addNewUser(newUser.getUser_name());
 		
@@ -48,7 +52,6 @@ public class MainDbResource {
 	// 1
 	@POST
 	@Path("/stores")
-	@Consumes(MediaType.APPLICATION_JSON)
 	public Response addNewStore(Store newStore, @Context UriInfo uriInfo) {
 		Store store = mainDB.addNewStore(newStore.getName(), newStore.getPhone_number());
 		
@@ -63,7 +66,6 @@ public class MainDbResource {
 	// 1
 	@POST
 	@Path("/products")
-	@Consumes(MediaType.APPLICATION_JSON)
 	public Response addNewProduct(Product newProduct, @Context UriInfo uriInfo) {
 		Product product = mainDB.addNewProduct(newProduct.getName(), newProduct.getCategory(), newProduct.getDescription());
 		
@@ -78,7 +80,6 @@ public class MainDbResource {
 	// 1
 	@POST
 	@Path("/products/{productID}/customerReviews")
-	@Consumes(MediaType.APPLICATION_JSON)
 	public Response addNewCustomerReview(@PathParam("productID") int productID, 
 			CustomerReview newCustomerReview, @Context UriInfo uriInfo) throws ResourceNotFoundException  {
 		CustomerReview customerReview = 
@@ -123,102 +124,144 @@ public class MainDbResource {
 			@PathParam("productID") int productID, @PathParam("reviewID") int reviewID) throws ResourceNotFoundException {
 		return mainDB.getCustomerReviewByID(productID, reviewID);
 	}
-	/*
+	
 	///////////////////////////////////////////////////
 	// Update
 	///////////////////////////////////////////////////
 	// 3
-	public User updateUser(int id, String name) throws DatabaseException {
+	@PUT
+	@Path("/users/{userID}")
+	public User updateUser(@PathParam("userID") int id, User newUser) throws ResourceNotFoundException {
+		return mainDB.updateUser(id, newUser.getUser_name());
 	}
 	
 	// 3
-	public Store updateStore(int id, String name, String phoneNumber) throws DatabaseException {
+	@PUT
+	@Path("/stores/{storeID}")
+	public Store updateStore(@PathParam("storeID") int id, Store newStore) throws ResourceNotFoundException {
+		return mainDB.updateStore(id, newStore.getName(), newStore.getPhone_number());
 	}
 	
 	// 3
-	public Product updateProduct(int id, String name, String category, String description) throws DatabaseException {
+	@PUT
+	@Path("/products/{productID}")
+	public Product updateProduct(@PathParam("productID") int id, Product newProduct) throws ResourceNotFoundException {
+		return mainDB.updateProduct(id, newProduct.getName(), newProduct.getCategory(), newProduct.getDescription());
 	}
 	
 	// 3
-	public CustomerReview updateCustomerReview(int productID, int reviewID, int rating, String review) throws DatabaseException  {
+	@PUT
+	@Path("/products/{productID}/customerReviews/{reviewID}")
+	public CustomerReview updateCustomerReview(@PathParam("productID") int productID, 
+			@PathParam("reviewID") int reviewID, CustomerReview newCustomerReview) throws ResourceNotFoundException  {
+		return mainDB.updateCustomerReview(productID, reviewID, newCustomerReview.getRating(), newCustomerReview.getReview());
 	}	
 	
 	///////////////////////////////////////////////////
 	// Delete
 	///////////////////////////////////////////////////
 	// 4
-	public void deleteProduct(int productID) throws DatabaseException {
+	@DELETE
+	@Path("/products/{productID}")
+	public void deleteProduct(@PathParam("productID") int productID) throws ResourceNotFoundException {
+		mainDB.deleteProduct(productID);
 	}
 	
 	// 5
-	public void deleteStore(int storeID) throws DatabaseException {
+	@DELETE
+	@Path("/stores/{storeID}")
+	public void deleteStore(@PathParam("storeID") int storeID) throws ResourceNotFoundException {
+		mainDB.deleteStore(storeID);
 	}
 	
 	// 6
-	public void deleteUser(int userID) throws DatabaseException {
+	@DELETE
+	@Path("/users/{userID}")
+	public void deleteUser(@PathParam("userID") int userID) throws ResourceNotFoundException {
+		mainDB.deleteUser(userID);
 	}
 	
 	// 7
-	public void deleteCustomerReview(int productID, int reviewID) throws DatabaseException {
+	@DELETE
+	@Path("/products/{productID}/customerReviews/{reviewID}")
+	public void deleteCustomerReview(@PathParam("productID") int productID, @PathParam("reviewID") int reviewID) throws ResourceNotFoundException {
+		mainDB.deleteCustomerReview(productID, reviewID);
 	}
 	
 	///////////////////////////////////////////////////
 	// GetAll
 	///////////////////////////////////////////////////
-	// 8
-	public Collection<Product> getAllProductsByCategory(String category) {
-	}
 	
 	// 8
-	public Collection<Product> getAllProductsByMaxPrice(int maxPrice) {
+	@GET
+	@Path("/products")
+	public Collection<Product> getAllProductsByCategoryOrMaxPrice(
+			@QueryParam("category") String category, 
+			@QueryParam("maxPrice") Integer maxPrice) throws ResourceNotFoundException {
+		if(category != null)
+			return mainDB.getAllProductsByCategory(category);
+		else if(maxPrice != null)
+			return mainDB.getAllProductsByMaxPrice(maxPrice);
+		throw new ResourceNotFoundException("must have a query param: category or maxPrice");
 	}
 	
 	// 9
+	@GET
+	@Path("/stores")
 	public Collection<Store> getAllStores() {
+		return mainDB.getAllStores();
 	}
 	
 	// 10
-	public Collection<CustomerReview> getAllCustomerReviews(int productID) throws DatabaseException {
+	@GET
+	@Path("/products/{productID}/customerReviews}")
+	public Collection<CustomerReview> getAllCustomerReviews(@PathParam("productID") int productID) throws ResourceNotFoundException {
+		return mainDB.getAllCustomerReviews(productID);
 	}
 	
 	// 11
+	@GET
+	@Path("/users")
 	public Collection<User> getAllUsers() {
+		return mainDB.getAllUsers();
 	}
-	
+	/*
 	// 12
-	public Collection<Pair<Integer, Integer>> getAllStoresAndPricesBySpecificProduct(int productID) throws DatabaseException {
+	@GET
+	@Path("/products/{productID}/stores")
+	public Collection<Pair<Integer, Integer>> getAllStoresAndPricesBySpecificProduct(int productID) throws ResourceNotFoundException {
 	}
 	
 	// 13
-	public Collection<Pair<Integer, Integer>> getAllProductsAndPricesInStore(int storeID) throws DatabaseException {
+	public Collection<Pair<Integer, Integer>> getAllProductsAndPricesInStore(int storeID) throws ResourceNotFoundException {
 	}
-	
+	/*
 	///////////////////////////////////////////////////
 	// More getters
 	///////////////////////////////////////////////////
 	// 14
-	public double getAverageRatingOfProduct(int productID) throws DatabaseException {
+	public double getAverageRatingOfProduct(int productID) throws ResourceNotFoundException {
 	}
 	
 	///////////////////////////////////////////////////
 	// Link store and product
 	///////////////////////////////////////////////////
 	// 15
-	public void linkStoreAndProduct(int storeID, int productID, int priceInStore) throws DatabaseException {
+	public void linkStoreAndProduct(int storeID, int productID, int priceInStore) throws ResourceNotFoundException {
 	}
 	
-	private int checkIfProductIsLinkedToStore(int productID, int storeID) throws DatabaseException {
+	private int checkIfProductIsLinkedToStore(int productID, int storeID) throws ResourceNotFoundException {
 	}
 	
 	///////////////////////////////////////////////////
 	// User's cart
 	///////////////////////////////////////////////////
 	// 16
-	public void addToCart(int userID, int productID, int storeID) throws DatabaseException {
+	public void addToCart(int userID, int productID, int storeID) throws ResourceNotFoundException {
 	}
 	
 	// 17
-	public void deleteFromCart(int userID, int productID, int storeID) throws DatabaseException {
+	public void deleteFromCart(int userID, int productID, int storeID) throws ResourceNotFoundException {
 	}
 	
 	// 18
@@ -226,15 +269,15 @@ public class MainDbResource {
 	}
 	
 	// 19
-	public Collection<Pair<Integer, Integer>> getProductIDsAndStoreIDsFromCart(int userID) throws DatabaseException {
+	public Collection<Pair<Integer, Integer>> getProductIDsAndStoreIDsFromCart(int userID) throws ResourceNotFoundException {
 	}
 	
 	// 20
-	public Collection<Pair<Integer, Integer>> getProductIDsAndStoreIDsBought(int userID) throws DatabaseException {
+	public Collection<Pair<Integer, Integer>> getProductIDsAndStoreIDsBought(int userID) throws ResourceNotFoundException {
 	}
 	
 	// 21
-	public Collection<Integer> getAllUserIDsThatBoughtTheProduct(int productID) throws DatabaseException {
+	public Collection<Integer> getAllUserIDsThatBoughtTheProduct(int productID) throws ResourceNotFoundException {
 	}
 	*/
 }
