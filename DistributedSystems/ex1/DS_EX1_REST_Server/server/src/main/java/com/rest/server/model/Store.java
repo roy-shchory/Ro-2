@@ -20,13 +20,14 @@ public class Store implements Serializable {
 	@XmlElement(name = "phone", required = true)
 	public String phone_number;
 		
-	private Map<Integer, Integer> productsAndPriceList;
+	private Map<Integer, Integer> productsAndPriceList = new HashMap<>();
+	
+	public Store() {}
 	
 	public Store(String name,int id,String phone_number){
 		this.name = name;
 		this.id = id;
 		this.phone_number = phone_number;
-		this.productsAndPriceList = new HashMap<>();
 	}
 
 	///////////////////////////////////////////////////

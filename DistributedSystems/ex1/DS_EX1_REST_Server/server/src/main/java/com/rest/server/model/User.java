@@ -20,7 +20,7 @@ public class User implements Serializable {
 	private Collection<Pair<Integer, Integer>> shopping_cart = new ArrayList<>(); // <product, store>
 	private Collection<Pair<Integer, Integer>> history = new ArrayList<>(); // <product, store>
 	
-	public User() {id=2;user_name="DD";}
+	public User() {}
 	
 	public User(String user_name, int id){
 		this.user_name = user_name;

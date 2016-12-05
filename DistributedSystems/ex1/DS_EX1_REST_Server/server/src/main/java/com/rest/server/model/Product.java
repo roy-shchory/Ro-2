@@ -7,7 +7,6 @@ import java.util.Map;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
 @XmlRootElement(name = "product")
 public class Product implements Serializable {
@@ -25,22 +24,17 @@ public class Product implements Serializable {
 	@XmlElement(name = "description", required = true)
 	public String description;
 	
-	@XmlTransient
-	private Map<Integer, Integer> storeAndPriceList;
+	private Map<Integer, Integer> storeAndPriceList = new HashMap<>();
+	private Map<Integer, CustomerReview> customerReviews = new HashMap<>();
+	private int newCustomerReviewID = 0;
 	
-	@XmlTransient
-	private Map<Integer, CustomerReview> customerReviews;
-	
-	private int newCustomerReviewID;
+	public Product() {}
 	
 	public Product(int id, String name, String category, String description) {
 		this.id = id;
 		this.setName(name);
 		this.setCategory(category);
 		this.setDescription(description);
-		this.storeAndPriceList = new HashMap<>();
-		this.customerReviews = new HashMap<>();
-		this.newCustomerReviewID = 0;
 	}
 
 	///////////////////////////////////////////////////

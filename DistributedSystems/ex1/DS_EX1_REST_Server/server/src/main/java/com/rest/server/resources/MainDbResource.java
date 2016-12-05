@@ -27,12 +27,6 @@ public class MainDbResource {
 
 	static MainDB mainDB = new MainDB();
 	
-	@GET
-	@Path("/users")
-	public User a(){
-		return new User("ron",25);
-	}
-	
 	///////////////////////////////////////////////////
 	// Add
 	///////////////////////////////////////////////////

@@ -1,8 +1,6 @@
 package com.rest.server.model;
 
 import com.rest.server.exceptions.ResourceNotFoundException;
-import com.rest.server.exceptions.ResourceNotFoundException;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,8 +25,6 @@ public class MainDB {
 		newUserID = 0;
 		newStoreID = 0;
 		newProductID = 0;
-		
-		addNewProduct("A", "B", "C");
 	}
 	
 	///////////////////////////////////////////////////

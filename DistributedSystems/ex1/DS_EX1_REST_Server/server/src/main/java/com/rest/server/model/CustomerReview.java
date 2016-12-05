@@ -21,6 +21,8 @@ public class CustomerReview implements Serializable {
 	@XmlElement(name = "rating", required = true)
 	private int rating;
 	
+	public CustomerReview() {}
+	
 	public CustomerReview(int id, int productID, String review, int rating) {
 		this.id = id;
 		this.productID = productID;
