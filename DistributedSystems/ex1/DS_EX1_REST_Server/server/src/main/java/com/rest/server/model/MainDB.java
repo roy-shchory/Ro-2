@@ -27,6 +27,8 @@ public class MainDB {
 		newUserID = 0;
 		newStoreID = 0;
 		newProductID = 0;
+		
+		addNewProduct("A", "B", "C");
 	}
 	
 	///////////////////////////////////////////////////

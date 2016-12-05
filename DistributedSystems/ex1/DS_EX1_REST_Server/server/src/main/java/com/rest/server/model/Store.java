@@ -4,12 +4,22 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "store")
 public class Store implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private String name;
-	private int id;
-	private String phone_number;
+	@XmlElement(name = "name", required = true)
+	public String name;
+	
+	@XmlElement(name = "id", required = false)
+	public int id;
+	
+	@XmlElement(name = "phone", required = true)
+	public String phone_number;
+		
 	private Map<Integer, Integer> productsAndPriceList;
 	
 	public Store(String name,int id,String phone_number){

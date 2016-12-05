@@ -5,15 +5,32 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+
+@XmlRootElement(name = "product")
 public class Product implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private int id;
-	private String name;
-	private String category;
-	private String description;
+	@XmlElement(name = "id", required = false)
+	public int id;
+	
+	@XmlElement(name = "name", required = true)
+	public String name;
+	
+	@XmlElement(name = "category", required = true)
+	public String category;
+	
+	@XmlElement(name = "description", required = true)
+	public String description;
+	
+	@XmlTransient
 	private Map<Integer, Integer> storeAndPriceList;
+	
+	@XmlTransient
 	private Map<Integer, CustomerReview> customerReviews;
+	
 	private int newCustomerReviewID;
 	
 	public Product(int id, String name, String category, String description) {

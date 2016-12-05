@@ -2,12 +2,23 @@ package com.rest.server.model;
 
 import java.io.Serializable;
 
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "customerReview")
 public class CustomerReview implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
+	@XmlElement(name = "id", required = false)
 	private int id;
+	
+	@XmlElement(name = "productID", required = false)
 	private int productID;
+	
+	@XmlElement(name = "review", required = true)
 	private String review;
+	
+	@XmlElement(name = "rating", required = true)
 	private int rating;
 	
 	public CustomerReview(int id, int productID, String review, int rating) {
