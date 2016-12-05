@@ -1,6 +1,7 @@
 package com.rest.server.model;
 
-import com.rest.server.exceptions.DatabaseException;
+import com.rest.server.exceptions.ResourceNotFoundException;
+import com.rest.server.exceptions.ResourceNotFoundException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +54,7 @@ public class MainDB {
 	}
 	
 	// 1
-	public CustomerReview addNewCustomerReview(int productID, int rating, String review) throws DatabaseException  {
+	public CustomerReview addNewCustomerReview(int productID, int rating, String review) throws ResourceNotFoundException  {
 		Product product = getProductByID(productID);
 		return product.addNewCustomerReview(rating, review);
 	}
@@ -62,36 +63,36 @@ public class MainDB {
 	// GetByID
 	///////////////////////////////////////////////////
 	// 2
-	public User getUserByID(int id) throws DatabaseException {
+	public User getUserByID(int id) throws ResourceNotFoundException {
 		User user = users.get(id);
 		if(user == null)
-			throw DatabaseException.generateInvalidIdError("User", id);
+			throw ResourceNotFoundException.generateInvalidIdError("User", id);
 		return user;
 	}
 	
 	// 2
-	public Store getStoreByID(int id) throws DatabaseException {
+	public Store getStoreByID(int id) throws ResourceNotFoundException {
 		Store store = stores.get(id);
 		if(store == null)
-			throw DatabaseException.generateInvalidIdError("Store", id);
+			throw ResourceNotFoundException.generateInvalidIdError("Store", id);
 		return store;
 	}
 	
 	// 2
-	public Product getProductByID(int id) throws DatabaseException {
+	public Product getProductByID(int id) throws ResourceNotFoundException {
 		Product product = products.get(id);
 		if(product == null)
-			throw DatabaseException.generateInvalidIdError("Product", id);
+			throw ResourceNotFoundException.generateInvalidIdError("Product", id);
 		return product;
 	}
 	
 	// 2
-	public CustomerReview getCustomerReviewByID(int productID, int reviewID) throws DatabaseException {
+	public CustomerReview getCustomerReviewByID(int productID, int reviewID) throws ResourceNotFoundException {
 		Product product = getProductByID(productID);
 		CustomerReview customerReview = product.getCustomerReviewByID(reviewID);
 		
 		if(customerReview == null)
-			throw DatabaseException.generateInvalidIdError("Customer Review", reviewID);
+			throw ResourceNotFoundException.generateInvalidIdError("Customer Review", reviewID);
 		return customerReview;
 	}
 	
@@ -99,14 +100,14 @@ public class MainDB {
 	// Update
 	///////////////////////////////////////////////////
 	// 3
-	public User updateUser(int id, String name) throws DatabaseException {
+	public User updateUser(int id, String name) throws ResourceNotFoundException {
 		User user = getUserByID(id);
 		user.setUser_name(name);
 		return user;
 	}
 	
 	// 3
-	public Store updateStore(int id, String name, String phoneNumber) throws DatabaseException {
+	public Store updateStore(int id, String name, String phoneNumber) throws ResourceNotFoundException {
 		Store store = getStoreByID(id);
 		store.setName(name);
 		store.setPhone_number(phoneNumber);
@@ -114,7 +115,7 @@ public class MainDB {
 	}
 	
 	// 3
-	public Product updateProduct(int id, String name, String category, String description) throws DatabaseException {
+	public Product updateProduct(int id, String name, String category, String description) throws ResourceNotFoundException {
 		Product product = getProductByID(id);
 		product.setName(name);
 		product.setCategory(category);
@@ -123,7 +124,7 @@ public class MainDB {
 	}
 	
 	// 3
-	public CustomerReview updateCustomerReview(int productID, int reviewID, int rating, String review) throws DatabaseException  {
+	public CustomerReview updateCustomerReview(int productID, int reviewID, int rating, String review) throws ResourceNotFoundException  {
 		CustomerReview customerReview = getCustomerReviewByID(productID, reviewID);
 		customerReview.setRating(rating);
 		customerReview.setReview(review);
@@ -134,7 +135,7 @@ public class MainDB {
 	// Delete
 	///////////////////////////////////////////////////
 	// 4
-	public void deleteProduct(int productID) throws DatabaseException {
+	public void deleteProduct(int productID) throws ResourceNotFoundException {
 		getProductByID(productID); // throws exception if productID is invalid
 		
 		for (Store store: stores.values()) {
@@ -145,7 +146,7 @@ public class MainDB {
 	}
 	
 	// 5
-	public void deleteStore(int storeID) throws DatabaseException {
+	public void deleteStore(int storeID) throws ResourceNotFoundException {
 		getStoreByID(storeID); // throws exception if storeID is invalid
 		
 		for (Product product : products.values()) {
@@ -156,13 +157,13 @@ public class MainDB {
 	}
 	
 	// 6
-	public void deleteUser(int userID) throws DatabaseException {
+	public void deleteUser(int userID) throws ResourceNotFoundException {
 		getUserByID(userID); // throws exception if userID is invalid
 		users.remove(userID);
 	}
 	
 	// 7
-	public void deleteCustomerReview(int productID, int reviewID) throws DatabaseException {
+	public void deleteCustomerReview(int productID, int reviewID) throws ResourceNotFoundException {
 		getCustomerReviewByID(productID, reviewID); // throws exception if productID or reviewID are invalid
 		
 		Product product = getProductByID(productID);
@@ -201,7 +202,7 @@ public class MainDB {
 	}
 	
 	// 10
-	public Collection<CustomerReview> getAllCustomerReviews(int productID) throws DatabaseException {
+	public Collection<CustomerReview> getAllCustomerReviews(int productID) throws ResourceNotFoundException {
 		return getProductByID(productID).getAllReviews();
 	}
 	
@@ -211,12 +212,12 @@ public class MainDB {
 	}
 	
 	// 12
-	public Collection<Pair<Integer, Integer>> getAllStoresAndPricesBySpecificProduct(int productID) throws DatabaseException {
+	public Collection<Pair<Integer, Integer>> getAllStoresAndPricesBySpecificProduct(int productID) throws ResourceNotFoundException {
 		return mapToCollection(getProductByID(productID).getAllStoresAndPrices());
 	}
 	
 	// 13
-	public Collection<Pair<Integer, Integer>> getAllProductsAndPricesInStore(int storeID) throws DatabaseException {
+	public Collection<Pair<Integer, Integer>> getAllProductsAndPricesInStore(int storeID) throws ResourceNotFoundException {
 		return mapToCollection(getStoreByID(storeID).getProductsWithPrices());
 	}
 	
@@ -224,12 +225,12 @@ public class MainDB {
 	// More getters
 	///////////////////////////////////////////////////
 	// 14
-	public double getAverageRatingOfProduct(int productID) throws DatabaseException {
+	public double getAverageRatingOfProduct(int productID) throws ResourceNotFoundException {
 		Product product = getProductByID(productID);
 		
 		Double avgRating = product.getAverageRating();
 		if (avgRating == null)
-			throw new DatabaseException("There are no customer reviews for the product ID: " + productID);
+			throw new ResourceNotFoundException("There are no customer reviews for the product ID: " + productID);
 		
 		return avgRating;
 	}
@@ -238,7 +239,7 @@ public class MainDB {
 	// Link store and product
 	///////////////////////////////////////////////////
 	// 15
-	public void linkStoreAndProduct(int storeID, int productID, int priceInStore) throws DatabaseException {
+	public void linkStoreAndProduct(int storeID, int productID, int priceInStore) throws ResourceNotFoundException {
 		Store store = getStoreByID(storeID);
 		Product product = getProductByID(productID);
 		
@@ -246,13 +247,13 @@ public class MainDB {
 		product.addStoreWithPrice(storeID, priceInStore);
 	}
 	
-	private int checkIfProductIsLinkedToStore(int productID, int storeID) throws DatabaseException {
+	private int checkIfProductIsLinkedToStore(int productID, int storeID) throws ResourceNotFoundException {
 		getProductByID(productID);
 		Store store = getStoreByID(storeID);
 		
 		Integer price = store.getProductPriceByID(productID); 
 		if(price == null)
-			throw new DatabaseException("product (" + productID +") is not linked to the store (" + storeID + ")");
+			throw new ResourceNotFoundException("product (" + productID +") is not linked to the store (" + storeID + ")");
 		
 		return price;
 	}
@@ -261,7 +262,7 @@ public class MainDB {
 	// User's cart
 	///////////////////////////////////////////////////
 	// 16
-	public void addToCart(int userID, int productID, int storeID) throws DatabaseException {
+	public void addToCart(int userID, int productID, int storeID) throws ResourceNotFoundException {
 		User user = getUserByID(userID);
 		checkIfProductIsLinkedToStore(productID, storeID);
 		
@@ -269,12 +270,12 @@ public class MainDB {
 	}
 	
 	// 17
-	public void deleteFromCart(int userID, int productID, int storeID) throws DatabaseException {
+	public void deleteFromCart(int userID, int productID, int storeID) throws ResourceNotFoundException {
 		getUserByID(userID).deleteFromShoppingCart(productID, storeID);
 	}
 	
 	// 18
-	public int payForUserCart(int userID) throws DatabaseException {
+	public int payForUserCart(int userID) throws ResourceNotFoundException {
 		User user = getUserByID(userID);
 		
 		int cost = 0;
@@ -287,17 +288,17 @@ public class MainDB {
 	}
 	
 	// 19
-	public Collection<Pair<Integer, Integer>> getProductIDsAndStoreIDsFromCart(int userID) throws DatabaseException {
+	public Collection<Pair<Integer, Integer>> getProductIDsAndStoreIDsFromCart(int userID) throws ResourceNotFoundException {
 		return getUserByID(userID).getAllItemsInCart();
 	}
 	
 	// 20
-	public Collection<Pair<Integer, Integer>> getProductIDsAndStoreIDsBought(int userID) throws DatabaseException {
+	public Collection<Pair<Integer, Integer>> getProductIDsAndStoreIDsBought(int userID) throws ResourceNotFoundException {
 		return getUserByID(userID).getAllItemsBought();
 	}
 	
 	// 21
-	public Collection<Integer> getAllUserIDsThatBoughtTheProduct(int productID) throws DatabaseException {
+	public Collection<Integer> getAllUserIDsThatBoughtTheProduct(int productID) throws ResourceNotFoundException {
 		getProductByID(productID);
 		
 		Collection<Integer> usersIdList = new ArrayList<>();		

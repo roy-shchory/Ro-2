@@ -4,19 +4,27 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "user")
 public class User implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private String user_name;
-	private int id;
-	private Collection<Pair<Integer, Integer>> shopping_cart; // <product, store>
-	private Collection<Pair<Integer, Integer>> history; // <product, store>
+	@XmlElement(name = "name", required = true)
+	public String user_name;
+	
+	@XmlElement(name = "id", required = false)
+	public int id;
+	
+	private Collection<Pair<Integer, Integer>> shopping_cart = new ArrayList<>(); // <product, store>
+	private Collection<Pair<Integer, Integer>> history = new ArrayList<>(); // <product, store>
+	
+	public User() {id=2;user_name="DD";}
 	
 	public User(String user_name, int id){
 		this.user_name = user_name;
 		this.id = id;
-		this.history = new ArrayList<>();
-		this.shopping_cart = new ArrayList<>();
 	}
 
 	///////////////////////////////////////////////////
