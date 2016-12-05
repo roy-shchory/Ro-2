@@ -52,7 +52,9 @@ public class MainDbResource {
 	}
 
 	// 1
+	@POST
 	@Path("/stores")
+	@Consumes(MediaType.APPLICATION_JSON)
 	public Response addNewStore(Store newStore, @Context UriInfo uriInfo) {
 		Store store = mainDB.addNewStore(newStore.getName(), newStore.getPhone_number());
 		
@@ -65,13 +67,35 @@ public class MainDbResource {
 	}
 	
 	// 1
+	@POST
 	@Path("/products")
-	public Product addNewProduct(String name, String category, String description) {
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response addNewProduct(Product newProduct, @Context UriInfo uriInfo) {
+		Product product = mainDB.addNewProduct(newProduct.getName(), newProduct.getCategory(), newProduct.getDescription());
+		
+		String newId = String.valueOf(product.getId());
+		URI uri = uriInfo.getAbsolutePathBuilder().path(newId).build();
+		return Response.
+				created(uri)
+				.entity(product)
+				.build();
 	}
 	
 	// 1
+	@POST
 	@Path("/products/{productID}/customerReviews")
-	public CustomerReview addNewCustomerReview(@PathParam("productID") int productID, int rating, String review) throws DatabaseException  {
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response addNewCustomerReview(@PathParam("productID") int productID, 
+			CustomerReview newCustomerReview, @Context UriInfo uriInfo) throws ResourceNotFoundException  {
+		CustomerReview customerReview = 
+				mainDB.addNewCustomerReview(productID, newCustomerReview.getRating(), newCustomerReview.getReview());
+		
+		String newId = String.valueOf(customerReview.getId());
+		URI uri = uriInfo.getAbsolutePathBuilder().path(newId).build();
+		return Response.
+				created(uri)
+				.entity(customerReview)
+				.build();
 	}
 	
 	///////////////////////////////////////////////////
@@ -83,19 +107,29 @@ public class MainDbResource {
 	public User getUserByID(@PathParam("userID") int id) throws ResourceNotFoundException {
 		return mainDB.getUserByID(id);
 	}
+	
+	// 2
+	@GET
+	@Path("/stores/{storeID}")
+	public Store getStoreByID(@PathParam("storeID") int id) throws ResourceNotFoundException {
+		return mainDB.getStoreByID(id);
+	}
+	
+	// 2
+	@GET
+	@Path("/products/{productID}")
+	public Product getProductByID(@PathParam("productID") int id) throws ResourceNotFoundException {
+		return mainDB.getProductByID(id);
+	}
+	
+	// 2
+	@GET
+	@Path("/products/{productID}/customerReviews/{reviewID}")
+	public CustomerReview getCustomerReviewByID(
+			@PathParam("productID") int productID, @PathParam("reviewID") int reviewID) throws ResourceNotFoundException {
+		return mainDB.getCustomerReviewByID(productID, reviewID);
+	}
 	/*
-	// 2
-	public Store getStoreByID(int id) throws DatabaseException {
-	}
-	
-	// 2
-	public Product getProductByID(int id) throws DatabaseException {
-	}
-	
-	// 2
-	public CustomerReview getCustomerReviewByID(int productID, int reviewID) throws DatabaseException {
-	}
-	
 	///////////////////////////////////////////////////
 	// Update
 	///////////////////////////////////////////////////
