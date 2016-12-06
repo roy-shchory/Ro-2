@@ -219,66 +219,112 @@ public class MainDbResource {
 		return mainDB.getAllCustomerReviews(productID);
 	}
 	
-	// 11
+	// 11 + 21
 	@GET
 	@Path("/users")
-	public Collection<User> getAllUsers() {
-		return mainDB.getAllUsers();
+	public Collection<User> getAllUsers(@QueryParam("productID") Integer productID) throws ResourceNotFoundException {
+		if (productID != null)
+			return mainDB.getAllUserIDsThatBoughtTheProduct(productID);
+		else
+			return mainDB.getAllUsers();
 	}
-	/*
+	
 	// 12
 	@GET
 	@Path("/products/{productID}/stores")
-	public Collection<Pair<Integer, Integer>> getAllStoresAndPricesBySpecificProduct(int productID) throws ResourceNotFoundException {
+	public Collection<StorePricePair> getAllStoresAndPricesBySpecificProduct(@PathParam("productID") int productID) throws ResourceNotFoundException {
+		Collection<StorePricePair> c = new ArrayList<>();
+		
+		for (Pair<Integer, Integer> p : mainDB.getAllStoresAndPricesBySpecificProduct(productID)) {
+			c.add(new StorePricePair(p));
+		}
+		return c;
 	}
 	
 	// 13
-	public Collection<Pair<Integer, Integer>> getAllProductsAndPricesInStore(int storeID) throws ResourceNotFoundException {
+	@GET
+	@Path("/stores/{storeID}/products")
+	public Collection<ProductPricePair> getAllProductsAndPricesInStore(@PathParam("storeID") int storeID) throws ResourceNotFoundException {
+		Collection<ProductPricePair> c = new ArrayList<>();
+		
+		for (Pair<Integer, Integer> p : mainDB.getAllProductsAndPricesInStore(storeID)) {
+			c.add(new ProductPricePair(p));
+		}
+		return c;
 	}
-	/*
+	
 	///////////////////////////////////////////////////
 	// More getters
 	///////////////////////////////////////////////////
 	// 14
 	public double getAverageRatingOfProduct(int productID) throws ResourceNotFoundException {
+		//TODO
 	}
 	
 	///////////////////////////////////////////////////
 	// Link store and product
 	///////////////////////////////////////////////////
 	// 15
-	public void linkStoreAndProduct(int storeID, int productID, int priceInStore) throws ResourceNotFoundException {
+	@POST
+	@Path("/products/{productID}/stores")
+	public void linkStoreAndProduct_fromProduct(
+			@PathParam("productID") int productID, StorePricePair storePricePair) throws ResourceNotFoundException {
+		mainDB.linkStoreAndProduct(productID, storePricePair.storeID, storePricePair.priceOfProduct);
 	}
 	
-	private int checkIfProductIsLinkedToStore(int productID, int storeID) throws ResourceNotFoundException {
+	// 15
+	@POST	
+	@Path("/stores/{storeID}/products")
+	public void linkStoreAndProduct_fromStore(
+			@PathParam("storeID") int storeID, ProductPricePair productPricePair) throws ResourceNotFoundException {
+		mainDB.linkStoreAndProduct(productPricePair.productID, storeID, productPricePair.priceOfProduct);
 	}
-	
+		
 	///////////////////////////////////////////////////
 	// User's cart
 	///////////////////////////////////////////////////
 	// 16
-	public void addToCart(int userID, int productID, int storeID) throws ResourceNotFoundException {
+	@POST
+	@Path("/users/{userID}/cart")
+	public void addToCart(@PathParam("userID") int userID, ProductStorePair productStorePair) throws ResourceNotFoundException {
+		mainDB.addToCart(userID, productStorePair.productID, productStorePair.storeID);
 	}
 	
 	// 17
-	public void deleteFromCart(int userID, int productID, int storeID) throws ResourceNotFoundException {
+	@DELETE
+	@Path("/users/{userID}/cart")
+	public void deleteFromCart(@PathParam("userID") int userID, ProductStorePair productStorePair) throws ResourceNotFoundException {
+		mainDB.deleteFromCart(userID, productStorePair.productID, productStorePair.storeID);
 	}
 	
 	// 18
 	public int payForUserCart(int userID) throws DatabaseException {
+		//TODO
 	}
 	
 	// 19
-	public Collection<Pair<Integer, Integer>> getProductIDsAndStoreIDsFromCart(int userID) throws ResourceNotFoundException {
+	@GET
+	@Path("/users/{userID}/cart")
+	public Collection<ProductStorePair> getProductIDsAndStoreIDsFromCart(@PathParam("userID") int userID) throws ResourceNotFoundException {
+		Collection<ProductStorePair> c = new ArrayList<>();
+		
+		for (Pair<Integer, Integer> p : mainDB.getProductIDsAndStoreIDsFromCart(userID)) {
+			c.add(new ProductStorePair(p));
+		}
+		return c;
 	}
 	
 	// 20
-	public Collection<Pair<Integer, Integer>> getProductIDsAndStoreIDsBought(int userID) throws ResourceNotFoundException {
+	@GET
+	@Path("/users/{userID}/history")
+	public Collection<ProductStorePair> getProductIDsAndStoreIDsBought(@PathParam("userID") int userID) throws ResourceNotFoundException {
+		Collection<ProductStorePair> c = new ArrayList<>();
+		
+		for (Pair<Integer, Integer> p : mainDB.getProductIDsAndStoreIDsBought(userID)) {
+			c.add(new ProductStorePair(p));
+		}
+		return c;
 	}
 	
-	// 21
-	public Collection<Integer> getAllUserIDsThatBoughtTheProduct(int productID) throws ResourceNotFoundException {
-	}
-	*/
 }
 

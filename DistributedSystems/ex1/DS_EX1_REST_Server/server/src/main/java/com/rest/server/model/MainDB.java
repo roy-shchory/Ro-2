@@ -296,13 +296,13 @@ public class MainDB {
 	}
 	
 	// 21
-	public Collection<Integer> getAllUserIDsThatBoughtTheProduct(int productID) throws ResourceNotFoundException {
+	public Collection<User> getAllUserIDsThatBoughtTheProduct(int productID) throws ResourceNotFoundException {
 		getProductByID(productID);
 		
-		Collection<Integer> usersIdList = new ArrayList<>();		
+		Collection<User> usersIdList = new ArrayList<>();		
 		for (User user : users.values()) {
 			if(user.wasTheProductBought(productID))
-				usersIdList.add(user.getId());
+				usersIdList.add(user);
 		}
 		
 		return usersIdList;
