@@ -1,12 +1,18 @@
 package com.rest.server.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+
+import com.rest.server.resources.MainDbResource;
 
 @XmlRootElement(name = "product")
 public class Product implements Serializable {
@@ -23,6 +29,11 @@ public class Product implements Serializable {
 	
 	@XmlElement(name = "description", required = true)
 	public String description;
+	
+	@XmlElement(name = "links", required = false)
+	public List<Link> links  = new ArrayList<>();
+	
+	private UriInfo baseUriInfo;
 	
 	private Map<Integer, Integer> storeAndPriceList = new HashMap<>();
 	private Map<Integer, CustomerReview> customerReviews = new HashMap<>();
@@ -131,6 +142,7 @@ public class Product implements Serializable {
 	///////////////////////////////////////////////////
 	public CustomerReview addNewCustomerReview(int rating, String review) {
 		CustomerReview customerReview = new CustomerReview(++newCustomerReviewID, id, review, rating);
+		customerReview.setLinks(makeBase());
 		customerReviews.put(customerReview.getId(), customerReview);
 		return customerReview;
 	}
@@ -140,6 +152,30 @@ public class Product implements Serializable {
 	 */
 	public boolean addStoreWithPrice(int storeID, int price) {
 		return storeAndPriceList.put(storeID, price) == null;
+	}
+	
+	///////////////////////////////////////////////////
+	// links
+	///////////////////////////////////////////////////
+	private UriBuilder makeBase() {
+		UriBuilder base = baseUriInfo.getBaseUriBuilder()
+				.path(MainDbResource.class)
+				.path("products")
+				.path(Integer.toString(this.getId()));
+		return base;
+	}
+	public void setLinks(UriInfo uriInfo) {
+		baseUriInfo = uriInfo;
+		links.add(new Link().setLink(makeBase().build().toString(), "self"));
+		
+		String uri = makeBase().path("stores").build().toString();
+		links.add(new Link().setLink(uri, "stores"));
+		
+		uri = makeBase().path("customerReviews").build().toString();
+		links.add(new Link().setLink(uri, "customerReviews"));
+		
+		uri = makeBase().path("average_rating").build().toString();
+		links.add(new Link().setLink(uri, "average rating"));
 	}
 	
 	///////////////////////////////////////////////////

@@ -1,11 +1,17 @@
 package com.rest.server.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+
+import com.rest.server.resources.MainDbResource;
 
 @XmlRootElement(name = "store")
 public class Store implements Serializable {
@@ -21,6 +27,9 @@ public class Store implements Serializable {
 	public String phone_number;
 		
 	private Map<Integer, Integer> productsAndPriceList = new HashMap<>();
+	
+	@XmlElement(name = "links", required = false)
+	public List<Link> links  = new ArrayList<>();
 	
 	public Store() {}
 	
@@ -86,6 +95,23 @@ public class Store implements Serializable {
 	 */
 	public boolean addProductWithPrice(int productID, int price) {
 		return productsAndPriceList.put(productID, price) == null;
+	}
+	
+	///////////////////////////////////////////////////
+	// links
+	///////////////////////////////////////////////////
+	private UriBuilder makeBase(UriInfo uriInfo) {
+		UriBuilder base = uriInfo.getBaseUriBuilder()
+				.path(MainDbResource.class)
+				.path("stores")
+				.path(Integer.toString(this.getId()));
+		return base;
+	}
+	public void setLinks(UriInfo uriInfo) {		
+		links.add(new Link().setLink(makeBase(uriInfo).build().toString(), "self"));
+		
+		String uri = makeBase(uriInfo).path("products").build().toString();
+		links.add(new Link().setLink(uri, "products"));   
 	}
 	
 	///////////////////////////////////////////////////

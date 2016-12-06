@@ -49,7 +49,7 @@ public class MainDbResource {
 	@POST
 	@Path("/stores")
 	public Response addNewStore(Store newStore, @Context UriInfo uriInfo) {
-		Store store = mainDB.addNewStore(newStore.getName(), newStore.getPhone_number());
+		Store store = mainDB.addNewStore(newStore.getName(), newStore.getPhone_number(), uriInfo);
 		
 		String newId = String.valueOf(store.getId());
 		URI uri = uriInfo.getAbsolutePathBuilder().path(newId).build();
@@ -63,7 +63,7 @@ public class MainDbResource {
 	@POST
 	@Path("/products")
 	public Response addNewProduct(Product newProduct, @Context UriInfo uriInfo) {
-		Product product = mainDB.addNewProduct(newProduct.getName(), newProduct.getCategory(), newProduct.getDescription());
+		Product product = mainDB.addNewProduct(newProduct.getName(), newProduct.getCategory(), newProduct.getDescription(), uriInfo);
 		
 		String newId = String.valueOf(product.getId());
 		URI uri = uriInfo.getAbsolutePathBuilder().path(newId).build();
@@ -193,12 +193,13 @@ public class MainDbResource {
 	@Path("/products")
 	public Collection<Product> getAllProductsByCategoryOrMaxPrice(
 			@QueryParam("category") String category, 
-			@QueryParam("maxPrice") Integer maxPrice) throws ResourceNotFoundException, DatabaseException {
+			@QueryParam("maxPrice") Integer maxPrice) {
 		if(category != null)
 			return mainDB.getAllProductsByCategory(category);
 		else if(maxPrice != null)
 			return mainDB.getAllProductsByMaxPrice(maxPrice);
-		throw new DatabaseException("must have a query param: category or maxPrice");
+		else
+			return mainDB.getAllProducts();
 	}
 	
 	// 9
@@ -210,7 +211,7 @@ public class MainDbResource {
 	
 	// 10
 	@GET
-	@Path("/products/{productID}/customerReviews}")
+	@Path("/products/{productID}/customerReviews")
 	public Collection<CustomerReview> getAllCustomerReviews(@PathParam("productID") int productID) throws ResourceNotFoundException {
 		return mainDB.getAllCustomerReviews(productID);
 	}
@@ -263,29 +264,32 @@ public class MainDbResource {
 	// Link store and product
 	///////////////////////////////////////////////////
 	// 15
-	@POST
+	@PUT
 	@Path("/products/{productID}/stores")
-	public void linkStoreAndProduct_fromProduct(
+	public StorePricePair linkStoreAndProduct_fromProduct(
 			@PathParam("productID") int productID, StorePricePair storePricePair) throws ResourceNotFoundException {
 		mainDB.linkStoreAndProduct(productID, storePricePair.storeID, storePricePair.priceOfProduct);
+		return storePricePair;
 	}
 	
 	// 15
-	@POST	
+	@PUT
 	@Path("/stores/{storeID}/products")
-	public void linkStoreAndProduct_fromStore(
+	public ProductPricePair linkStoreAndProduct_fromStore(
 			@PathParam("storeID") int storeID, ProductPricePair productPricePair) throws ResourceNotFoundException {
 		mainDB.linkStoreAndProduct(productPricePair.productID, storeID, productPricePair.priceOfProduct);
+		return productPricePair;
 	}
 		
 	///////////////////////////////////////////////////
 	// User's cart
 	///////////////////////////////////////////////////
 	// 16
-	@POST
+	@PUT
 	@Path("/users/{userID}/cart")
-	public void addToCart(@PathParam("userID") int userID, ProductStorePair productStorePair) throws ResourceNotFoundException {
+	public ProductStorePair addToCart(@PathParam("userID") int userID, ProductStorePair productStorePair) throws ResourceNotFoundException {
 		mainDB.addToCart(userID, productStorePair.productID, productStorePair.storeID);
+		return productStorePair;
 	}
 	
 	// 17
@@ -297,10 +301,8 @@ public class MainDbResource {
 	
 	// 18
 	@PUT
-	@Path("/users/{userID}/cart")
-	public MyNumber payForUserCart(@PathParam("userID") int userID, @QueryParam("pay") Boolean pay) throws ResourceNotFoundException, DatabaseException {
-		if (pay == null)
-			throw new DatabaseException("must have a boolean 'pay' query param");
+	@Path("/users/{userID}/cart/pay")
+	public MyNumber payForUserCart(@PathParam("userID") int userID) throws ResourceNotFoundException {
 		return new MyNumber(mainDB.payForUserCart(userID));
 	}
 	

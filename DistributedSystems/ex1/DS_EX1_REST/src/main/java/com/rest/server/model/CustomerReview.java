@@ -1,7 +1,10 @@
 package com.rest.server.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
+import javax.ws.rs.core.UriBuilder;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -20,6 +23,9 @@ public class CustomerReview implements Serializable {
 	
 	@XmlElement(name = "rating", required = true)
 	private int rating;
+	
+	@XmlElement(name = "links", required = false)
+	public List<Link> links  = new ArrayList<>();
 	
 	public CustomerReview() {}
 	
@@ -59,6 +65,16 @@ public class CustomerReview implements Serializable {
 	}
 	public void setRating(int rating) {
 		this.rating = rating;
+	}
+	
+	///////////////////////////////////////////////////
+	// links
+	///////////////////////////////////////////////////
+	public void setLinks(UriBuilder productBaseUri) {		
+		links.add(new Link().setLink(productBaseUri
+				.path("customerReviews")
+				.path(Integer.toString(this.getId()))
+				.build().toString(), "self"));
 	}
 	
 	///////////////////////////////////////////////////

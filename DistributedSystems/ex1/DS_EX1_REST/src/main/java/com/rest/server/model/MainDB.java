@@ -42,15 +42,17 @@ public class MainDB {
 	}
 	
 	// 1
-	public Store addNewStore(String name, String phoneNumber) {
+	public Store addNewStore(String name, String phoneNumber, UriInfo uriInfo) {
 		Store store = new Store(name, ++newStoreID, phoneNumber);
+		store.setLinks(uriInfo);
 		stores.put(store.getId(), store);
 		return store;
 	}
 	
 	// 1
-	public Product addNewProduct(String name, String category, String description) {
+	public Product addNewProduct(String name, String category, String description, UriInfo uriInfo) {
 		Product product = new Product(++newProductID, name, category, description);
+		product.setLinks(uriInfo);
 		products.put(product.getId(), product);
 		return product;
 	}
@@ -197,6 +199,11 @@ public class MainDB {
 				list.add(product);
 		}
 		return list;
+	}
+	
+	// extra for 8
+	public Collection<Product> getAllProducts() {
+		return products.values();
 	}
 	
 	// 9
