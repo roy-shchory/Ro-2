@@ -1,19 +1,15 @@
 package com.rest.server.exceptions;
 
-public class ResourceNotFoundException extends Exception{
+public class ResourceNotFoundException extends Exception {
 	
 	private static final long serialVersionUID = 1L;
 	
-	public ResourceNotFoundException(String error){
-		super(error);
+	public ResourceNotFoundException(String objectType, int wrongId){
+		super("Invalid " + objectType + " ID (" + wrongId + ")");
 	}
 	
 	public ResourceNotFoundException() {
 		super();
-	}
-	
-	public static ResourceNotFoundException generateInvalidIdError(String objectType, int wrongId) {
-		return new ResourceNotFoundException("Invalid " + objectType + " ID (" + wrongId + ")");
 	}
 
 }

@@ -193,12 +193,12 @@ public class MainDbResource {
 	@Path("/products")
 	public Collection<Product> getAllProductsByCategoryOrMaxPrice(
 			@QueryParam("category") String category, 
-			@QueryParam("maxPrice") Integer maxPrice) throws ResourceNotFoundException {
+			@QueryParam("maxPrice") Integer maxPrice) throws ResourceNotFoundException, DatabaseException {
 		if(category != null)
 			return mainDB.getAllProductsByCategory(category);
 		else if(maxPrice != null)
 			return mainDB.getAllProductsByMaxPrice(maxPrice);
-		throw new ResourceNotFoundException("must have a query param: category or maxPrice");
+		throw new DatabaseException("must have a query param: category or maxPrice");
 	}
 	
 	// 9
@@ -298,9 +298,9 @@ public class MainDbResource {
 	// 18
 	@PUT
 	@Path("/users/{userID}/cart")
-	public MyNumber payForUserCart(@PathParam("userID") int userID, @QueryParam("pay") Boolean pay) throws ResourceNotFoundException {
+	public MyNumber payForUserCart(@PathParam("userID") int userID, @QueryParam("pay") Boolean pay) throws ResourceNotFoundException, DatabaseException {
 		if (pay == null)
-			throw new ResourceNotFoundException("must have a boolean 'pay' query param");
+			throw new DatabaseException("must have a boolean 'pay' query param");
 		return new MyNumber(mainDB.payForUserCart(userID));
 	}
 	

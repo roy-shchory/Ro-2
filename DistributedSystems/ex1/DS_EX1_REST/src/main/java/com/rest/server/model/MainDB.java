@@ -1,5 +1,6 @@
 package com.rest.server.model;
 
+import com.rest.server.exceptions.DatabaseException;
 import com.rest.server.exceptions.ResourceNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,8 +64,9 @@ public class MainDB {
 	// 2
 	public User getUserByID(int id) throws ResourceNotFoundException {
 		User user = users.get(id);
+		
 		if(user == null)
-			throw ResourceNotFoundException.generateInvalidIdError("User", id);
+			throw new ResourceNotFoundException("User", id);
 		return user;
 	}
 	
@@ -72,7 +74,7 @@ public class MainDB {
 	public Store getStoreByID(int id) throws ResourceNotFoundException {
 		Store store = stores.get(id);
 		if(store == null)
-			throw ResourceNotFoundException.generateInvalidIdError("Store", id);
+			throw new ResourceNotFoundException("Store", id);
 		return store;
 	}
 	
@@ -80,7 +82,7 @@ public class MainDB {
 	public Product getProductByID(int id) throws ResourceNotFoundException {
 		Product product = products.get(id);
 		if(product == null)
-			throw ResourceNotFoundException.generateInvalidIdError("Product", id);
+			throw new ResourceNotFoundException("Product", id);
 		return product;
 	}
 	
@@ -90,7 +92,7 @@ public class MainDB {
 		CustomerReview customerReview = product.getCustomerReviewByID(reviewID);
 		
 		if(customerReview == null)
-			throw ResourceNotFoundException.generateInvalidIdError("Customer Review", reviewID);
+			throw new ResourceNotFoundException("Customer Review", reviewID);
 		return customerReview;
 	}
 	
@@ -223,12 +225,12 @@ public class MainDB {
 	// More getters
 	///////////////////////////////////////////////////
 	// 14
-	public double getAverageRatingOfProduct(int productID) throws ResourceNotFoundException {
+	public double getAverageRatingOfProduct(int productID) throws ResourceNotFoundException, DatabaseException {
 		Product product = getProductByID(productID);
 		
 		Double avgRating = product.getAverageRating();
 		if (avgRating == null)
-			throw new ResourceNotFoundException("There are no customer reviews for the product ID: " + productID);
+			throw new DatabaseException("There are no customer reviews for the product ID: " + productID);
 		
 		return avgRating;
 	}
@@ -245,13 +247,13 @@ public class MainDB {
 		product.addStoreWithPrice(storeID, priceInStore);
 	}
 	
-	private int checkIfProductIsLinkedToStore(int productID, int storeID) throws ResourceNotFoundException {
+	private int checkIfProductIsLinkedToStore(int productID, int storeID) throws ResourceNotFoundException, DatabaseException {
 		getProductByID(productID);
 		Store store = getStoreByID(storeID);
 		
 		Integer price = store.getProductPriceByID(productID); 
 		if(price == null)
-			throw new ResourceNotFoundException("product (" + productID +") is not linked to the store (" + storeID + ")");
+			throw new DatabaseException("product (" + productID +") is not linked to the store (" + storeID + ")");
 		
 		return price;
 	}
