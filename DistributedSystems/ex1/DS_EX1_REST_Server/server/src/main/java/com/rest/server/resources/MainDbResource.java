@@ -5,12 +5,8 @@ import com.rest.server.model.*;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -257,8 +253,10 @@ public class MainDbResource {
 	// More getters
 	///////////////////////////////////////////////////
 	// 14
-	public double getAverageRatingOfProduct(int productID) throws ResourceNotFoundException {
-		//TODO
+	@GET
+	@Path("/products/{productID}/average_rating")
+	public MyNumber getAverageRatingOfProduct(@PathParam("productID") int productID) throws ResourceNotFoundException {
+		return new MyNumber(mainDB.getAverageRatingOfProduct(productID));
 	}
 	
 	///////////////////////////////////////////////////
@@ -298,8 +296,12 @@ public class MainDbResource {
 	}
 	
 	// 18
-	public int payForUserCart(int userID) throws DatabaseException {
-		//TODO
+	@PUT
+	@Path("/users/{userID}/cart")
+	public MyNumber payForUserCart(@PathParam("userID") int userID, @QueryParam("pay") Boolean pay) throws ResourceNotFoundException {
+		if (pay == null)
+			throw new ResourceNotFoundException("must have a boolean 'pay' query param");
+		return new MyNumber(mainDB.payForUserCart(userID));
 	}
 	
 	// 19
