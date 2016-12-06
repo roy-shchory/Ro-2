@@ -29,6 +29,22 @@ public class MainDbResource {
 
 	static MainDB mainDB = new MainDB();
 	
+	@GET
+	public Collection<Link> getMe(@Context UriInfo uriInfo) {
+		Collection<Link> links  = new ArrayList<>();
+		
+		String uri = uriInfo.getAbsolutePathBuilder().path("users").build().toString();
+		links.add(new Link().setLink(uri, "users"));
+		
+		uri = uriInfo.getAbsolutePathBuilder().path("stores").build().toString();
+		links.add(new Link().setLink(uri, "stores"));
+		
+		uri = uriInfo.getAbsolutePathBuilder().path("products").build().toString();
+		links.add(new Link().setLink(uri, "products"));
+		
+		return links;
+	}
+	
 	///////////////////////////////////////////////////
 	// Add
 	///////////////////////////////////////////////////
