@@ -3,9 +3,14 @@ package com.rest.server.model;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+
+import com.rest.server.resources.MainDbResource;
 
 @XmlRootElement(name = "user")
 public class User implements Serializable {
@@ -19,6 +24,9 @@ public class User implements Serializable {
 	
 	private Collection<Pair<Integer, Integer>> shopping_cart = new ArrayList<>(); // <product, store>
 	private Collection<Pair<Integer, Integer>> history = new ArrayList<>(); // <product, store>
+	
+	@XmlElement(name = "links", required = false)
+	public List<Link> links  = new ArrayList<>();
 	
 	public User() {}
 	
@@ -83,6 +91,26 @@ public class User implements Serializable {
 	public void payCart() {
 		history.addAll(shopping_cart);
 		shopping_cart.clear();
+	}
+	
+	///////////////////////////////////////////////////
+	// links
+	///////////////////////////////////////////////////
+	private UriBuilder makeBase(UriInfo uriInfo) {
+		UriBuilder base = uriInfo.getBaseUriBuilder()
+				.path(MainDbResource.class)
+				.path("users")
+				.path(Integer.toString(this.getId()));
+		return base;
+	}
+	public void setLinks(UriInfo uriInfo) {		
+		links.add(new Link().setLink(makeBase(uriInfo).build().toString(), "self"));
+		
+		String uri = makeBase(uriInfo).path("cart").build().toString();
+		links.add(new Link().setLink(uri, "cart"));
+		
+		uri = makeBase(uriInfo).path("history").build().toString();
+		links.add(new Link().setLink(uri, "history"));	    
 	}
 	
 	///////////////////////////////////////////////////

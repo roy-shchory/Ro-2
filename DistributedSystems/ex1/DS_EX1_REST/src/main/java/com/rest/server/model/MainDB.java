@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.ws.rs.core.UriInfo;
+
 public class MainDB {	
 	private Map<Integer, User> users;
 	private int newUserID;
@@ -32,8 +34,9 @@ public class MainDB {
 	// Add
 	///////////////////////////////////////////////////
 	// 1
-	public User addNewUser(String name) {
+	public User addNewUser(String name, UriInfo uriInfo) {
 		User user = new User(name, ++newUserID);
+		user.setLinks(uriInfo);
 		users.put(user.getId(), user);
 		return user;
 	}

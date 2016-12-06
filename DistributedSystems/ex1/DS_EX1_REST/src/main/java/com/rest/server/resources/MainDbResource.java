@@ -35,7 +35,7 @@ public class MainDbResource {
 	@POST
 	@Path("/users")
 	public Response addNewUser(User newUser, @Context UriInfo uriInfo) {
-		User user = mainDB.addNewUser(newUser.getUser_name());
+		User user = mainDB.addNewUser(newUser.getUser_name(), uriInfo);
 		
 		String newId = String.valueOf(user.getId());
 		URI uri = uriInfo.getAbsolutePathBuilder().path(newId).build();
