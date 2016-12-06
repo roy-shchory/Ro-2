@@ -25,12 +25,16 @@ public class Parser {
 		return messagesTarget.path("{"+name+"Id}");	
 	}
 	
-	@SuppressWarnings({"unchecked"})
-	private static Object getReq(String name,Class c,WebTarget target,int id){
-		return target
+	private static Object getReq(String name,Class c,WebTarget target,int id) throws ResourceNotFoundException{
+		@SuppressWarnings("unchecked")
+		Response resp = target
 		.resolveTemplate(name+"Id", id)
 		.request(MediaType.APPLICATION_JSON)
 		.get(c);
+		if(resp.getStatus()!=201){
+			throw new ResourceNotFoundException();
+		}
+		return resp.getEntity();
 	}
 	
 	@SuppressWarnings({"unchecked"})
@@ -151,25 +155,29 @@ public class Parser {
 		String ret = "got " + parts[1] + " ";
 		int id = str2num(parts[2]);
 		WebTarget target = definePath(parts[1],"get");
-		switch (parts[1]) {
-		case "user":
-			ret += obj2str(getReq(parts[1],User.class,target,id));
-			break;			
-		case "store":
-			ret += obj2str(getReq(parts[1],Store.class,target,id));
-			break;			
-		case "product":
-			ret += obj2str(getReq(parts[1],Product.class,target,id));
-			break;
-		case "customerReview":
-			ret += obj2str(getReq(parts[1],CustomerReview.class,target,id));
-			break;
-		default:
-			return null;
+		try {
+			switch (parts[1]) {
+			case "user":
+					ret += obj2str(getReq(parts[1],User.class,target,id));
+				break;			
+			case "store":
+				ret += obj2str(getReq(parts[1],Store.class,target,id));
+				break;			
+			case "product":
+				ret += obj2str(getReq(parts[1],Product.class,target,id));
+				break;
+			case "customerReview":
+				ret += obj2str(getReq(parts[1],CustomerReview.class,target,id));
+				break;
+			default:
+				return null;
+			}
+		} catch (ResourceNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		return ret;
 	}
-	/*
 	private static String cmd_update(String[] parts) throws RemoteException, DatabaseException {
 		String ret = "Updated " + parts[1] + " ";
 		int id = str2num(parts[2]);
@@ -179,7 +187,7 @@ public class Parser {
 			ret += obj2str(putObj(parts[1], new User(parts[3],id), target, id));
 			break;			
 		case "store":
-			ret += obj2str(mainDB.updateStore(id, parts[3], parts[4]));
+			ret += obj2str(putObj(parts[1],(new Store(parts[3], id, parts[4]),target,id));
 			break;			
 		case "product":
 			ret += obj2str(mainDB.updateProduct(id, parts[3], parts[4], getStringFrom(parts, 5)));
@@ -192,6 +200,7 @@ public class Parser {
 		}
 		return ret;
 	}
+	/*
 	private static String cmd_delete(String[] parts) throws RemoteException, DatabaseException {
 		int id = str2num(parts[2]);
 		
