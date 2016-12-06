@@ -12,7 +12,7 @@ public class ClientApp {
 	public static void main(String[] args){
 		Client client = ClientBuilder.newClient();
 		
-		WebTarget baseTarget = client.target("http://localhost:8080/SD_EX1_REST/webapi/app");
+		WebTarget baseTarget = client.target("http://localhost:8080/DS_EX1_REST/webapi/app");
 		WebTarget messagesTarget = baseTarget.path("users");
 		WebTarget singleMessageTarget = messagesTarget.path("{messageId}");
 		
@@ -22,15 +22,18 @@ public class ClientApp {
 			.post(Entity.json(newMessage));
 		if (postResponse.getStatus() != 201) {
 			System.out.println("Error");
+			return;
 		}
 		User createdUser = postResponse.readEntity(User.class);
 		System.out.println(createdUser.getUser_name());
-		
+		try{
 		User user1 = singleMessageTarget
-				.resolveTemplate("messageId", "1")
+				.resolveTemplate("messageId", "200")
 				.request(MediaType.APPLICATION_JSON)
 				.get(User.class);
-		
 		System.out.print(user1.getUser_name()+"\n");
+		} catch(Exception e){
+			System.out.println(e.getMessage());
+		}
 	}
 }
