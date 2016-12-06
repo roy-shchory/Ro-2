@@ -18,6 +18,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.Response.Status;
 
 import com.rest.server.exceptions.*;
 
@@ -151,7 +152,7 @@ public class MainDbResource {
 	public CustomerReview updateCustomerReview(@PathParam("productID") int productID, 
 			@PathParam("reviewID") int reviewID, CustomerReview newCustomerReview) throws ResourceNotFoundException  {
 		return mainDB.updateCustomerReview(productID, reviewID, newCustomerReview.getRating(), newCustomerReview.getReview());
-	}	
+	}
 	
 	///////////////////////////////////////////////////
 	// Delete
@@ -284,13 +285,13 @@ public class MainDbResource {
 	///////////////////////////////////////////////////
 	// User's cart
 	///////////////////////////////////////////////////
-	// 16
-	@PUT
-	@Path("/users/{userID}/cart")
-	public ProductStorePair addToCart(@PathParam("userID") int userID, ProductStorePair productStorePair) throws ResourceNotFoundException {
-		mainDB.addToCart(userID, productStorePair.productID, productStorePair.storeID);
-		return productStorePair;
-	}
+//	// 16
+//	@PUT
+//	@Path("/users/{userID}/cart")
+//	public ProductStorePair addToCart(@PathParam("userID") int userID, ProductStorePair productStorePair) throws ResourceNotFoundException {
+//		mainDB.addToCart(userID, productStorePair.productID, productStorePair.storeID);
+//		return productStorePair;
+//	}
 	
 	// 17
 	@DELETE
@@ -299,11 +300,26 @@ public class MainDbResource {
 		mainDB.deleteFromCart(userID, productStorePair.productID, productStorePair.storeID);
 	}
 	
-	// 18
+//	// 18
+//	@PUT
+//	@Path("/users/{userID}/cart/pay")
+//	public MyNumber payForUserCart(@PathParam("userID") int userID) throws ResourceNotFoundException {
+//		return new MyNumber(mainDB.payForUserCart(userID));
+//	}
+	
+	// 16 + 18
 	@PUT
-	@Path("/users/{userID}/cart/pay")
-	public MyNumber payForUserCart(@PathParam("userID") int userID) throws ResourceNotFoundException {
-		return new MyNumber(mainDB.payForUserCart(userID));
+	@Path("/users/{userID}/cart")
+	public Response payOrAdd(@PathParam("userID") int userID, 
+			@QueryParam("pay") Boolean pay, ProductStorePair productStorePair) throws ResourceNotFoundException, DatabaseException {
+		
+		if (pay != null && pay == true)
+			return Response.status(Status.OK).entity(new MyNumber(mainDB.payForUserCart(userID))).build();
+		else if (productStorePair != null) {
+			mainDB.addToCart(userID, productStorePair.productID, productStorePair.storeID);
+			return Response.status(Status.OK).entity(productStorePair).build();
+		}
+		throw new DatabaseException("must have a boolean 'pay' query param OR send a ProductStorePair");
 	}
 	
 	// 19
