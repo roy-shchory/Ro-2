@@ -17,5 +17,10 @@ public class StorePricePair {
 		storeID = p.getLeft();
 		priceOfProduct = p.getRight();
 	}
+	
+	@Override
+	public String toString(){
+		return this.storeID + " = " + this.priceOfProduct;
+	}
 
 }

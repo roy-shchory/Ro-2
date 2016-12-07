@@ -17,5 +17,8 @@ public class ProductPricePair {
 		productID = p.getLeft();
 		priceOfProduct = p.getRight();
 	}
-
+	@Override
+	public String toString(){
+		return this.productID + " = " + this.priceOfProduct;
+	}
 }

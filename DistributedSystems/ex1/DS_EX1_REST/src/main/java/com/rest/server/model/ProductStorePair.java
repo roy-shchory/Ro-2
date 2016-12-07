@@ -17,5 +17,9 @@ public class ProductStorePair {
 		productID = p.getLeft();
 		storeID = p.getRight();
 	}
-
+	@Override
+	public String toString(){
+		return this.productID + " = " + this.storeID; 
+	}
+	
 }
