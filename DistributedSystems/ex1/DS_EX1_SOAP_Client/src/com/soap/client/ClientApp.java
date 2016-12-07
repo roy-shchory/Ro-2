@@ -37,7 +37,7 @@ public class ClientApp {
 						output = "## Invalid input";
 					}
 				} catch (DatabaseException_Exception e) {
-					output = "## From Server: " + e.getMessage();
+					output = "## Error from server: " + e.getMessage();
 				}
 				System.out.println(output);
 				writer.println(output);

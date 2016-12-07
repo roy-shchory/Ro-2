@@ -38,25 +38,25 @@ linkStoreToProduct 4 4 20
 linkStoreToProduct 4 3 3
 getAll products product 1 p1 c1 d1_1 d1_2 product 3 p3 c3 d3_1 d3_2 product 4 p4 c4 d4_1 d4_2
 getAll products product 4 p4 c4 d4_1 d4_2
-getAll products product 3 p3 c3 d3_1 d3_2 product 4 p4 c4 d4_1 d4_2
+getAll products product 3 p3 c3 d3_1 d3_2
 getAll stores store 1 s1 0 store 3 s3 0 store 4 s4 0
 getAll customerReviews 1 customerReviews 1 2 5 5 r2_new customerReviews 1 3 3 r3
 getAll users user 1 u1_is_cool
-StoresOfProduct 3 3 = 3
-ProductsOfStore 4 4 = 20
+StoresOfProduct 3 3 = 3 4 = 3
+ProductsOfStore 4 3 = 3 4 = 20
 getAvgRating 1 4.0
 ## Error from server (500): There are no customer reviews for the product ID: 3
 ## Error from server (404): Invalid User ID (2)
-addCart 1 4 3
+## Error from server (500): product (4) is not linked to the store (3)
 addCart 1 3 3
 addCart 1 3 3
-## Error from server (500): product (3) is not linked to the store (4)
+addCart 1 3 4
 removeCart 1 3 3
-getCart 1  4 = 3 3 = 3
+getCart 1 3 = 3 3 = 4
 payCart 1 6
-getHistory 1  4 = 3 3 = 3
+getHistory 1 3 = 3 3 = 4
 addCart 1 3 3
 deleted product 3
 ## Error from server (404): Invalid Product ID (3)
 ## Error from server (404): Invalid Product ID (3)
-getHistoryProduct 4  user 1 u1_is_cool
+getHistoryProduct 4

@@ -241,15 +241,15 @@ public class Parser {
 	}
 	private static String cmd_getCart(String[] parts, MainDB mainDB) throws DatabaseException_Exception {
 		int userID = str2num(parts[1]);
-		return "getCart " + userID + " " + collection2str(mainDB.getProductIDsAndStoreIDsFromCart(userID));
+		return "getCart " + userID + collection2str(mainDB.getProductIDsAndStoreIDsFromCart(userID));
 	}
 	private static String cmd_getHistory(String[] parts, MainDB mainDB) throws DatabaseException_Exception {
 		int userID = str2num(parts[1]);
-		return "getHistory " + userID + " " + collection2str(mainDB.getProductIDsAndStoreIDsBought(userID));
+		return "getHistory " + userID + collection2str(mainDB.getProductIDsAndStoreIDsBought(userID));
 	}
 	private static String cmd_getHistoryProduct(String[] parts, MainDB mainDB) throws DatabaseException_Exception {
 		int productID = str2num(parts[1]);
-		return "getHistoryProduct " + productID + " " + collection2str(mainDB.getAllUserIDsThatBoughtTheProduct(productID));
+		return "getHistoryProduct " + productID + collection2str(mainDB.getAllUserIDsThatBoughtTheProduct(productID));
 	}
 		
 	private static String getStringFrom(String[] parts, int startIndex) {

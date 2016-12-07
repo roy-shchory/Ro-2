@@ -285,7 +285,7 @@ public class MainDbResource {
 	@Path("/products/{productID}/stores")
 	public StorePricePair linkStoreAndProduct_fromProduct(
 			@PathParam("productID") int productID, StorePricePair storePricePair) throws ResourceNotFoundException {
-		mainDB.linkStoreAndProduct(productID, storePricePair.storeID, storePricePair.priceOfProduct);
+		mainDB.linkStoreAndProduct(storePricePair.storeID, productID, storePricePair.priceOfProduct);
 		return storePricePair;
 	}
 	
@@ -294,7 +294,7 @@ public class MainDbResource {
 	@Path("/stores/{storeID}/products")
 	public ProductPricePair linkStoreAndProduct_fromStore(
 			@PathParam("storeID") int storeID, ProductPricePair productPricePair) throws ResourceNotFoundException {
-		mainDB.linkStoreAndProduct(productPricePair.productID, storeID, productPricePair.priceOfProduct);
+		mainDB.linkStoreAndProduct(storeID, productPricePair.productID, productPricePair.priceOfProduct);
 		return productPricePair;
 	}
 		

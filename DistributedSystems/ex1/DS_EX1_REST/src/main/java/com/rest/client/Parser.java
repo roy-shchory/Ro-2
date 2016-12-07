@@ -5,9 +5,7 @@ import java.util.Collection;
 
 import com.rest.server.model.CustomerReview;
 import com.rest.server.model.Product;
-import com.rest.server.model.ProductPricePair;
 import com.rest.server.model.Store;
-import com.rest.server.model.StorePricePair;
 import com.rest.server.model.User;
 
 public class Parser {
@@ -246,15 +244,15 @@ public class Parser {
 	}
 	private static String cmd_getCart(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int userID = str2num(parts[1]);
-		return "getCart " + userID + " " + collection2str(mainDB.getProductIDsAndStoreIDsFromCart(userID));
+		return "getCart " + userID + collection2str(mainDB.getProductIDsAndStoreIDsFromCart(userID));
 	}
 	private static String cmd_getHistory(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int userID = str2num(parts[1]);
-		return "getHistory " + userID + " " + collection2str(mainDB.getProductIDsAndStoreIDsBought(userID));
+		return "getHistory " + userID + collection2str(mainDB.getProductIDsAndStoreIDsBought(userID));
 	}
 	private static String cmd_getHistoryProduct(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int productID = str2num(parts[1]);
-		return "getHistoryProduct " + productID + " " + collection2str(mainDB.getAllUserIDsThatBoughtTheProduct(productID));
+		return "getHistoryProduct " + productID + collection2str(mainDB.getAllUserIDsThatBoughtTheProduct(productID));
 	}
 		
 	private static String getStringFrom(String[] parts, int startIndex) {
