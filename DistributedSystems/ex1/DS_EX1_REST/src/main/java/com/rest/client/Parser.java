@@ -287,10 +287,4 @@ public class Parser {
 	private static String obj2str(CustomerReview cr) {
 		return "customerReviews " + cr.getProductID() + " " + cr.getId() + " " + cr.getRating() + " " + cr.getReview();
 	}
-	private static String obj2str(ProductPricePair p) {
-		return p.productID + " = " + p.priceOfProduct; 
-	}
-	private static String obj2str(StorePricePair p) {
-		return p.storeID + " = " + p.priceOfProduct; 
-	}
 }
