@@ -232,6 +232,10 @@ public class MainDB_ClientHandler {
 		return getMeGeneric(products.queryParam("maxPrice", maxPrice), new GenericType<Collection<Product>>() {});
 	}
 	
+	public Collection<Product> getAllProducts() throws ServerException {
+		return getMeGeneric(products, new GenericType<Collection<Product>>() {});
+	}
+	
 	// 9
 	public Collection<Store> getAllStores() throws ServerException {
 		return getMeGeneric(stores, new GenericType<Collection<Store>>() {});
@@ -282,7 +286,8 @@ public class MainDB_ClientHandler {
 	public void addToCart(int userID, int productID, int storeID) throws ServerException {
 		putMe(getUserCartPath(userID)
 			.queryParam("productID", productID)
-			.queryParam("storeID", storeID), null, ProductStorePair.class);
+			.queryParam("storeID", storeID), 
+			new ProductStorePair(new Pair<Integer, Integer>(productID, storeID)), ProductStorePair.class);
 	}
 	
 	// 17
@@ -296,7 +301,8 @@ public class MainDB_ClientHandler {
 	
 	// 18
 	public int payForUserCart(int userID) throws ServerException {
-		return (int)putMe(getUserCartPath(userID).queryParam("pay", true), null, MyNumber.class).num;
+		return (int)putMe(getUserCartPath(userID).queryParam("pay", true), 
+				new MyNumber(0), MyNumber.class).num;
 	}
 	
 	// 19

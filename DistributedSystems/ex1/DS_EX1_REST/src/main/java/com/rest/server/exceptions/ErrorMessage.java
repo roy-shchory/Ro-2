@@ -1,12 +1,16 @@
 package com.rest.server.exceptions;
 
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
 public class ErrorMessage {
 
-	private String errorMessage;
-	private int errorCode;
+	@XmlElement(name = "errorMessage", required = false)
+	public String errorMessage;
+	
+	@XmlElement(name = "errorCode", required = false)
+	public int errorCode;
 	
 	public ErrorMessage() {
 	}

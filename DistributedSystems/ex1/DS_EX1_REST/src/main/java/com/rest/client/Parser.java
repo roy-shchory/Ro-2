@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import com.rest.server.model.CustomerReview;
-import com.rest.server.model.Pair;
 import com.rest.server.model.Product;
 import com.rest.server.model.ProductPricePair;
 import com.rest.server.model.Store;
@@ -164,13 +163,26 @@ public class Parser {
 		switch (parts[1]) {
 		case "products":
 			Collection<Product> products = null;
-			switch (parts[2]) {
-			case "category":
-				products = mainDB.getAllProductsByCategory(parts[4]);
-				break;
-			case "maxPrice":
-				products = mainDB.getAllProductsByMaxPrice(str2num(parts[4]));
-				break;
+			if (parts.length >= 3) {
+				String queryName = parts[2];
+				String queryParam = null;
+				if (parts[2].contains("=")){
+					queryName = parts[2].split("=")[0];
+					queryParam = parts[2].split("=")[1];
+				} else {
+					queryParam = parts[4];
+				}
+				
+				switch (queryName) {
+				case "category":
+					products = mainDB.getAllProductsByCategory(queryParam);
+					break;
+				case "maxPrice":
+					products = mainDB.getAllProductsByMaxPrice(str2num(queryParam));
+					break;
+				}
+			} else {
+				products = mainDB.getAllProducts();
 			}
 			
 			ret += collection2str(products);

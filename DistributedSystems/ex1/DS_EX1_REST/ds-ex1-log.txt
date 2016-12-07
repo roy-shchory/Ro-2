@@ -1,0 +1,62 @@
+Added user user 14 u1
+Added store store 25 s1 0
+Added product product 25 p1 c1 d1_1 d1_2
+Added user user 15 u2
+Added store store 26 s2 0
+Added product product 26 p2 c2 d2_1 d2_2
+Added customerReview customerReviews 3 17 3 r1
+Added customerReview customerReviews 3 18 3 r2
+## Error from server (404): Invalid Product ID (6)
+Added product product 27 p3 c3 d3_1 d3_2
+Added product product 28 p4 c4 d4_1 d4_2
+Added store store 27 s3 0
+Added store store 28 s4 0
+Added customerReview customerReviews 3 19 3 r3
+got user user 1 u1_is_cool
+Updated user user 1 u1_is_cool
+got user user 1 u1_is_cool
+## Error from server (404): Invalid Store ID (5)
+## Error from server (404): Invalid Store ID (5)
+## Error from server (404): Invalid Store ID (5)
+## Error from server (404): Invalid Product ID (6)
+## Error from server (404): Invalid Product ID (6)
+## Error from server (404): Invalid Product ID (6)
+got customerReview customerReviews 3 8 5 5 r2_new
+Updated customerReview customerReviews 3 8 5 5 r2_new
+got customerReview customerReviews 3 8 5 5 r2_new
+## Error from server (404): Invalid Product ID (6)
+## Error from server (404): Invalid Product ID (6)
+## Error from server (404): Invalid Store ID (5)
+## Error from server (404): Invalid Store ID (5)
+## Error from server (404): Invalid User ID (4)
+got user user 2 u1
+## Error from server (404): Invalid Product ID (6)
+## Error from server (404): Invalid Customer Review ID (7)
+## Error from server (404): Invalid Customer Review ID (7)
+linkStoreToProduct 12 10 10
+linkStoreToProduct 13 11 20
+linkStoreToProduct 13 10 10
+getAll products product 1 p1 c1 d1_1 d1_2 product 2 p2 c2 d2_1 d2_2 product 3 p3 c3 d3_1 d3_2 product 4 p4 c4 d4_1 d4_2 product 5 p1 c1 d1_1 d1_2 product 7 p3 c3 d3_1 d3_2 product 8 p4 c4 d4_1 d4_2 product 9 p1 c1 d1_1 d1_2 product 11 p3 c3 d3_1 d3_2 product 12 p4 c4 d4_1 d4_2 product 13 p1 c1 d1_1 d1_2 product 14 p2 c2 d2_1 d2_2 product 15 p3 c3 d3_1 d3_2 product 16 p4 c4 d4_1 d4_2 product 17 p1 c1 d1_1 d1_2 product 18 p2 c2 d2_1 d2_2 product 19 p3 c3 d3_1 d3_2 product 20 p4 c4 d4_1 d4_2 product 21 p1 c1 d1_1 d1_2 product 22 p2 c2 d2_1 d2_2 product 23 p3 c3 d3_1 d3_2 product 24 p4 c4 d4_1 d4_2 product 25 p1 c1 d1_1 d1_2 product 26 p2 c2 d2_1 d2_2 product 27 p3 c3 d3_1 d3_2 product 28 p4 c4 d4_1 d4_2
+getAll products product 4 p4 c4 d4_1 d4_2 product 8 p4 c4 d4_1 d4_2 product 12 p4 c4 d4_1 d4_2 product 16 p4 c4 d4_1 d4_2 product 20 p4 c4 d4_1 d4_2 product 24 p4 c4 d4_1 d4_2 product 28 p4 c4 d4_1 d4_2
+getAll products product 12 p4 c4 d4_1 d4_2 product 13 p1 c1 d1_1 d1_2
+getAll stores store 1 s1 0 store 2 s2 0 store 3 s3 0 store 4 s4 0 store 6 s2 0 store 7 s3 0 store 8 s4 0 store 9 s1 0 store 10 s2 0 store 11 s3 0 store 12 s4 0 store 13 s1 0 store 14 s2 0 store 15 s3 0 store 16 s4 0 store 17 s1 0 store 18 s2 0 store 19 s3 0 store 20 s4 0 store 21 s1 0 store 22 s2 0 store 23 s3 0 store 24 s4 0 store 25 s1 0 store 26 s2 0 store 27 s3 0 store 28 s4 0
+getAll customerReviews 3 customerReviews 3 1 3 r3 customerReviews 3 2 3 r1 customerReviews 3 3 3 r2 customerReviews 3 4 3 r3 customerReviews 3 5 3 r1 customerReviews 3 6 3 r2 customerReviews 3 8 5 5 r2_new customerReviews 3 9 3 r2 customerReviews 3 10 3 r3 customerReviews 3 11 3 r1 customerReviews 3 12 3 r2 customerReviews 3 13 3 r3 customerReviews 3 14 3 r1 customerReviews 3 15 3 r2 customerReviews 3 16 3 r3 customerReviews 3 17 3 r1 customerReviews 3 18 3 r2 customerReviews 3 19 3 r3
+getAll users user 1 u1_is_cool user 2 u1 user 3 u2 user 5 u2 user 6 u1 user 7 u2 user 8 u1 user 9 u2 user 10 u1 user 11 u2 user 12 u1 user 13 u2 user 14 u1 user 15 u2
+## Error from server (404): Invalid Product ID (10)
+ProductsOfStore 13
+getAvgRating 3 3.111111111111111
+## Error from server (404): Invalid Product ID (10)
+## Error from server (500): product (11) is not linked to the store (12)
+## Error from server (500): product (11) is not linked to the store (12)
+## Error from server (404): Invalid Product ID (10)
+## Error from server (404): Invalid Product ID (10)
+## Error from server (500): product (11) is not linked to the store (13)
+removeCart 1 10 12
+getCart 1 
+payCart 1 0
+getHistory 1 
+## Error from server (404): Invalid Product ID (10)
+## Error from server (404): Invalid Product ID (10)
+payCart 1 0
+## Error from server (404): Invalid Product ID (10)
+getHistoryProduct 11 
