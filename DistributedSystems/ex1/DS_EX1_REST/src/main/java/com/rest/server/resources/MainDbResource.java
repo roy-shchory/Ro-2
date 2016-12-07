@@ -312,8 +312,13 @@ public class MainDbResource {
 	// 17
 	@DELETE
 	@Path("/users/{userID}/cart")
-	public void deleteFromCart(@PathParam("userID") int userID, ProductStorePair productStorePair) throws ResourceNotFoundException {
-		mainDB.deleteFromCart(userID, productStorePair.productID, productStorePair.storeID);
+	public void deleteFromCart(@PathParam("userID") int userID, 
+			@QueryParam("productID") Integer productID,
+			@QueryParam("storeID") Integer storeID) throws ResourceNotFoundException {
+		if (productID != null && storeID != null)
+			mainDB.deleteFromCart(userID, productID, storeID);
+		else
+			throw new DatabaseException("must have 'productID' and 'storeID' in the query params");
 	}
 	
 //	// 18
@@ -327,13 +332,16 @@ public class MainDbResource {
 	@PUT
 	@Path("/users/{userID}/cart")
 	public Response payOrAdd(@PathParam("userID") int userID, 
-			@QueryParam("pay") Boolean pay, ProductStorePair productStorePair) throws ResourceNotFoundException, DatabaseException {
+			@QueryParam("pay") Boolean pay,
+			@QueryParam("productID") Integer productID,
+			@QueryParam("storeID") Integer storeID) throws ResourceNotFoundException, DatabaseException {
 		
 		if (pay != null && pay == true)
 			return Response.status(Status.OK).entity(new MyNumber(mainDB.payForUserCart(userID))).build();
-		else if (productStorePair != null) {
-			mainDB.addToCart(userID, productStorePair.productID, productStorePair.storeID);
-			return Response.status(Status.OK).entity(productStorePair).build();
+		else if (productID != null && storeID != null) {
+			mainDB.addToCart(userID, productID, storeID);
+			return Response.status(Status.OK).entity(
+					new ProductStorePair(new Pair<Integer, Integer>(productID, storeID))).build();
 		}
 		throw new DatabaseException("must have a boolean 'pay' query param OR send a ProductStorePair");
 	}

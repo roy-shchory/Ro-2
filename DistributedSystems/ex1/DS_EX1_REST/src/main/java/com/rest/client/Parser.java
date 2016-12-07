@@ -1,102 +1,66 @@
 package com.rest.client;
 
-import com.rest.server.exceptions.*;
-import com.rest.server.model.*;
-import java.rmi.RemoteException;
 import java.util.Arrays;
+import java.util.Collection;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import com.rest.server.model.CustomerReview;
+import com.rest.server.model.Pair;
+import com.rest.server.model.Product;
+import com.rest.server.model.ProductPricePair;
+import com.rest.server.model.Store;
+import com.rest.server.model.StorePricePair;
+import com.rest.server.model.User;
 
 public class Parser {
-	
-	private static Client client = ClientBuilder.newClient();
-	private static WebTarget baseTarget = client.target("http://localhost:8080/DS_EX1_REST/webapi/app");
-	
-	private static WebTarget definePath(String name, String type){
-		WebTarget messagesTarget = baseTarget.path(name + "s");
-		if(type == "add") {
-			return messagesTarget;
-		}
-		return messagesTarget.path("{" + name + "Id}");	
-	}
-	
-	private static Object getReq(String name, Class c, WebTarget target, int id) throws ResourceNotFoundException{
-		Response resp = target
-		.resolveTemplate(name + "Id", id)
-		.request(MediaType.APPLICATION_JSON)
-		.get(c);
-		if(resp.getStatus() != 201){
-			throw new ResourceNotFoundException();
-		}
-		return resp.getEntity();
-	}
-	
-	@SuppressWarnings({"unchecked"})
-	private static Object putObj(String name,Object o,WebTarget target,int id){
-		Response res = target
-		.resolveTemplate(name+"Id", id)
-		.request(MediaType.APPLICATION_JSON)
-		.put((Entity<?>) o);
-		if(res.getStatus()!=201){
-			throw new DatabaseException();
-		}
-		return res.getEntity();
-	}
-	
-	public static String parseCmd(String cmd) throws DatabaseException, RemoteException {
+	public static String parseCmd(String cmd, MainDB_ClientHandler mainDB) throws ServerException {
 		String[] parts = cmd.split(" ");
 		
 		switch (parts[0]) {
 		case "add":
-			return cmd_add(parts);
+			return cmd_add(parts, mainDB);
 			
 		case "get":
-			return cmd_get(parts);
-/*			
+			return cmd_get(parts, mainDB);
+			
 		case "update":
-			return cmd_update(parts);
+			return cmd_update(parts, mainDB);
 			
 		case "delete":
-			return cmd_delete(parts);
+			return cmd_delete(parts, mainDB);
 			
 		case "getAll":
-			return cmd_getAll(parts);
+			return cmd_getAll(parts, mainDB);
 			
 		case "getStoresOfProduct":
-			return cmd_getStoresOfProduct(parts);
+			return cmd_getStoresOfProduct(parts, mainDB);
 			
 		case "getProductsOfStore":
-			return cmd_getProductsOfStore(parts);
+			return cmd_getProductsOfStore(parts, mainDB);
 			
 		case "getAvgRating":
-			return cmd_getAvgRating(parts);
+			return cmd_getAvgRating(parts, mainDB);
 			
 		case "linkStoreToProduct":
-			return cmd_linkStoreToProduct(parts);
+			return cmd_linkStoreToProduct(parts, mainDB);
 			
 		case "addCart":
-			return cmd_addCart(parts);
+			return cmd_addCart(parts, mainDB);
 			
 		case "removeCart":
-			return cmd_removeCart(parts);
+			return cmd_removeCart(parts, mainDB);
 			
 		case "payCart":
-			return cmd_payCart(parts);
+			return cmd_payCart(parts, mainDB);
 			
 		case "getCart":
-			return cmd_getCart(parts);
+			return cmd_getCart(parts, mainDB);
 			
 		case "getHistory":
-			return cmd_getHistory(parts);
+			return cmd_getHistory(parts, mainDB);
 			
 		case "getHistoryProduct":
-			return cmd_getHistoryProduct(parts);
-*/
+			return cmd_getHistoryProduct(parts, mainDB);
+
 		default:
 			break;
 		}
@@ -104,89 +68,59 @@ public class Parser {
 		return null;
 	}
 	
-	private static String cmd_add(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_add(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		String ret = "Added " + parts[1] + " ";
-		WebTarget target = definePath(parts[1],"add");
-		Response postResponse;
+		
 		switch (parts[1]) {
 		case "user":
-			postResponse = target
-			.request()
-			.post(Entity.json(new User(parts[2],0)));
-			if (postResponse.getStatus() != 201) {
-				throw new DatabaseException();
-			}
-			ret += obj2str(postResponse.readEntity(User.class));
-			break;			
+			ret += obj2str(mainDB.addNewUser(parts[2]));
+			break;
 		case "store":
-			postResponse = target
-			.request()
-			.post(Entity.json(new Store(parts[2],0,parts[3])));
-			if (postResponse.getStatus() != 201) {
-				throw new DatabaseException();
-			}
-			ret += obj2str(postResponse.readEntity(Store.class));
-			break;			
+			ret += obj2str(mainDB.addNewStore(parts[2], parts[3]));
+			break;
 		case "product":
-			postResponse = target
-			.request()
-			.post(Entity.json(new Product(0 , parts[2], parts[3], getStringFrom(parts, 4))));
-			if (postResponse.getStatus() != 201) {
-				throw new DatabaseException();
-			}
-			ret += obj2str(postResponse.readEntity(Product.class));
+			ret += obj2str(mainDB.addNewProduct(parts[2], parts[3], getStringFrom(parts, 4)));
 			break;
 		case "customerReview":
-			postResponse = target
-			.request()
-			.post(Entity.json(new CustomerReview(0,str2num(parts[2]), getStringFrom(parts,4), str2num(parts[3]))));
-			if (postResponse.getStatus() != 201) {
-				throw new DatabaseException();
-			}
-			ret += obj2str(postResponse.readEntity(CustomerReview.class));
+			ret += obj2str(mainDB.addNewCustomerReview(str2num(parts[2]), str2num(parts[3]), getStringFrom(parts, 4)));
 			break;
 		default:
 			return null;
 		}
 		return ret;
 	}
-	private static String cmd_get(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_get(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		String ret = "got " + parts[1] + " ";
 		int id = str2num(parts[2]);
-		WebTarget target = definePath(parts[1],"get");
-		try {
-			switch (parts[1]) {
-			case "user":
-					ret += obj2str(getReq(parts[1],User.class,target,id));
-				break;			
-			case "store":
-				ret += obj2str(getReq(parts[1],Store.class,target,id));
-				break;			
-			case "product":
-				ret += obj2str(getReq(parts[1],Product.class,target,id));
-				break;
-			case "customerReview":
-				ret += obj2str(getReq(parts[1],CustomerReview.class,target,id));
-				break;
-			default:
-				return null;
-			}
-		} catch (ResourceNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		
+		switch (parts[1]) {
+		case "user":
+			ret += obj2str(mainDB.getUserByID(id));
+			break;			
+		case "store":
+			ret += obj2str(mainDB.getStoreByID(id));
+			break;			
+		case "product":
+			ret += obj2str(mainDB.getProductByID(id));
+			break;
+		case "customerReview":
+			ret += obj2str(mainDB.getCustomerReviewByID(id, str2num(parts[3])));
+			break;
+		default:
+			return null;
 		}
 		return ret;
 	}
-	private static String cmd_update(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_update(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		String ret = "Updated " + parts[1] + " ";
 		int id = str2num(parts[2]);
-		WebTarget target = definePath(parts[1],"add");
+		
 		switch (parts[1]) {
 		case "user":
-			ret += obj2str(putObj(parts[1], new User(parts[3],id), target, id));
+			ret += obj2str(mainDB.updateUser(id, parts[3]));
 			break;			
 		case "store":
-			ret += obj2str(putObj(parts[1],(new Store(parts[3], id, parts[4]),target,id));
+			ret += obj2str(mainDB.updateStore(id, parts[3], parts[4]));
 			break;			
 		case "product":
 			ret += obj2str(mainDB.updateProduct(id, parts[3], parts[4], getStringFrom(parts, 5)));
@@ -199,8 +133,7 @@ public class Parser {
 		}
 		return ret;
 	}
-	/*
-	private static String cmd_delete(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_delete(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int id = str2num(parts[2]);
 		
 		String ret = "deleted " + parts[1] + " " + id;
@@ -225,12 +158,12 @@ public class Parser {
 		}
 		return ret;
 	}
-	private static String cmd_getAll(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_getAll(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		String ret = "getAll " + parts[1];
 		
 		switch (parts[1]) {
 		case "products":
-			Product[] products = null;
+			Collection<Product> products = null;
 			switch (parts[2]) {
 			case "category":
 				products = mainDB.getAllProductsByCategory(parts[4]);
@@ -240,21 +173,21 @@ public class Parser {
 				break;
 			}
 			
-			ret += array2str(products);
+			ret += collection2str(products);
 			break;
 			
 		case "stores":
-			ret += array2str(mainDB.getAllStores());
+			ret += collection2str(mainDB.getAllStores());
 			break;
 			
 		case "customerReviews":
 			int productID = str2num(parts[2]);
 			ret += " " + productID;
-			ret += array2str(mainDB.getAllCustomerReviews(productID));
+			ret += collection2str(mainDB.getAllCustomerReviews(productID));
 			break;
 			
 		case "users":
-			ret += array2str(mainDB.getAllUsers());
+			ret += collection2str(mainDB.getAllUsers());
 			break;
 			
 		default:
@@ -262,81 +195,73 @@ public class Parser {
 		}
 		return ret;
 	}
-	private static String cmd_getStoresOfProduct(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_getStoresOfProduct(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int productID = str2num(parts[1]);
-		return "StoresOfProduct " + productID + array2str(mainDB.getAllStoresAndPricesBySpecificProduct(productID));
+		return "StoresOfProduct " + productID + collection2str(mainDB.getAllStoresAndPricesBySpecificProduct(productID));
 	}
-	private static String cmd_getProductsOfStore(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_getProductsOfStore(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int storeID = str2num(parts[1]);
-		return "ProductsOfStore " + storeID + array2str(mainDB.getAllProductsAndPricesInStore(storeID));
+		return "ProductsOfStore " + storeID + collection2str(mainDB.getAllProductsAndPricesInStore(storeID));
 	}
-	private static String cmd_getAvgRating(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_getAvgRating(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int productID = str2num(parts[1]);
 		return "getAvgRating " + productID + " " + mainDB.getAverageRatingOfProduct(productID);
 	}
-	private static String cmd_linkStoreToProduct(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_linkStoreToProduct(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int storeID = str2num(parts[1]);
 		int productID = str2num(parts[2]);
 		int price = str2num(parts[3]);
 		mainDB.linkStoreAndProduct(storeID, productID, price);
 		return "linkStoreToProduct " + storeID + " " + productID + " " + price;
 	}
-	private static String cmd_addCart(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_addCart(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int userID = str2num(parts[1]);
 		int productID = str2num(parts[2]);
 		int storeID = str2num(parts[3]);
 		mainDB.addToCart(userID, productID, storeID);
 		return "addCart " + userID + " " + productID + " " + storeID;
 	}
-	private static String cmd_removeCart(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_removeCart(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int userID = str2num(parts[1]);
 		int productID = str2num(parts[2]);
 		int storeID = str2num(parts[3]);
 		mainDB.deleteFromCart(userID, productID, storeID);
 		return "removeCart " + userID + " " + productID + " " + storeID;
 	}
-	private static String cmd_payCart(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_payCart(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int userID = str2num(parts[1]);
 		return "payCart " + userID + " " + mainDB.payForUserCart(userID);
 	}
-	private static String cmd_getCart(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_getCart(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int userID = str2num(parts[1]);
-		return "getCart " + userID + " " + array2str(mainDB.getProductIDsAndStoreIDsFromCart(userID));
+		return "getCart " + userID + " " + collection2str(mainDB.getProductIDsAndStoreIDsFromCart(userID));
 	}
-	private static String cmd_getHistory(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_getHistory(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int userID = str2num(parts[1]);
-		return "getHistory " + userID + " " + array2str(mainDB.getProductIDsAndStoreIDsBought(userID));
+		return "getHistory " + userID + " " + collection2str(mainDB.getProductIDsAndStoreIDsBought(userID));
 	}
-	private static String cmd_getHistoryProduct(String[] parts) throws RemoteException, DatabaseException {
+	private static String cmd_getHistoryProduct(String[] parts, MainDB_ClientHandler mainDB) throws ServerException {
 		int productID = str2num(parts[1]);
-		return "getHistoryProduct " + productID + " " + array2str(mainDB.getAllUserIDsThatBoughtTheProduct(productID));
+		return "getHistoryProduct " + productID + " " + collection2str(mainDB.getAllUserIDsThatBoughtTheProduct(productID));
 	}
-	*/	
+		
 	private static String getStringFrom(String[] parts, int startIndex) {
 		return String.join(" ", Arrays.copyOfRange(parts, 4, parts.length));
 	}
-	
 	private static int str2num(String s) {
 		return Integer.parseInt(s);
 	}
 	
-	private static String array2str(int[] ts) {
+	private static <T> String collection2str(Collection<T> c) {
 		String ret = "";
-		for (int i = 0; i < ts.length; i++) {
-			ret += " " + ts[i];
-		}
-		return ret;
-	}
-	private static <T> String array2str(T[] ts) {
-		String ret = "";
-		for (T t : ts) {
+		for (T t : c) {
 			ret += " " + obj2str(t);
 		}
 		return ret;
 	}
 	
-	private static String obj2str(Object o) {
-		return o.toString();
+	private static String obj2str(Object u) {
+		return u.toString();
 	}
 	private static String obj2str(User u) {
 		return "user " + u.getId() + " " + u.getUser_name();
@@ -350,7 +275,10 @@ public class Parser {
 	private static String obj2str(CustomerReview cr) {
 		return "customerReviews " + cr.getProductID() + " " + cr.getId() + " " + cr.getRating() + " " + cr.getReview();
 	}
-	private static String obj2str(Pair p) {
-		return obj2str(p.getLeft()) + " = " + obj2str(p.getRight()); 
+	private static String obj2str(ProductPricePair p) {
+		return p.productID + " = " + p.priceOfProduct; 
+	}
+	private static String obj2str(StorePricePair p) {
+		return p.storeID + " = " + p.priceOfProduct; 
 	}
 }

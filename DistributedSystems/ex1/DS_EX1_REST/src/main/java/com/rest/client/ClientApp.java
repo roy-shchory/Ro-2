@@ -1,39 +1,52 @@
 package com.rest.client;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
-import com.rest.server.model.*;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Scanner;
 
 public class ClientApp {
-	public static void main(String[] args){
-		Client client = ClientBuilder.newClient();
+
+	public static void main(String[] args) {
+		String basePath = "http://localhost:8080/DS_EX1_REST/webapi/app";
+		MainDB_ClientHandler mainDB = new MainDB_ClientHandler(basePath); 
 		
-		WebTarget baseTarget = client.target("http://localhost:8080/DS_EX1_REST/webapi/app");
-		WebTarget messagesTarget = baseTarget.path("users");
-		WebTarget singleMessageTarget = messagesTarget.path("{messageId}");
+		Scanner reader = new Scanner(System.in);
+		PrintWriter writer = null;
+		String output = "";
 		
-		User newMessage = new User("Roy",5);
-		Response postResponse = messagesTarget
-			.request()
-			.post(Entity.json(newMessage));
-		if (postResponse.getStatus() != 201) {
-			System.out.println("Error");
-			return;
-		}
-		User createdUser = postResponse.readEntity(User.class);
-		System.out.println(createdUser.getUser_name());
-		try{
-		User user1 = singleMessageTarget
-				.resolveTemplate("messageId", "200")
-				.request(MediaType.APPLICATION_JSON)
-				.get(User.class);
-		System.out.print(user1.getUser_name()+"\n");
-		} catch(Exception e){
-			System.out.println(e.getMessage());
+		try {
+			writer = new PrintWriter(new FileWriter("ds-ex1-log.txt"));
+			
+			System.out.print(">> ");
+			String userInput = reader.nextLine();
+			
+			while (!"quit".equals(userInput)) {
+				try {
+					output = Parser.parseCmd(userInput, mainDB);
+					if (output == null) {
+						output = "## Invalid input";
+					}
+				} catch (ServerException e) {
+					output = e.getMessage();
+				}
+				System.out.println(output);
+				writer.println(output);
+				
+				System.out.print(">> ");
+				userInput = reader.nextLine();
+			}
+			System.out.println("## Bye");
+			
+		} catch (IOException e) {
+			System.out.println("## Can't write to log file: " + e.getMessage());
+		} finally {
+			reader.close();
+			if (writer != null) {
+				writer.flush();
+				writer.close();
+			}
 		}
 	}
+
 }
