@@ -215,6 +215,12 @@ public class MainDB {
 		return list;
 	}
 	
+	// extra for 8
+	@WebMethod
+	public Collection<Product> getAllProducts() {
+		return products.values();
+	}
+	
 	// 9
 	@WebMethod
 	public Collection<Store> getAllStores() {
