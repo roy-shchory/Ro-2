@@ -1,0 +1,41 @@
+UNFOLLOW FOLLOWER: 1 FOLLOWING: 2
+Successful
+ADD USER Name:      Even Age:37
+ADD USER ID: 7 Name:      Even Age:37
+REMOVE USER ID: 2
+Successful
+REMOVE USER ID: 3
+Successful
+ADD USER Name:      Jack Age:32
+ADD USER ID: 2 Name:      Jack Age:32
+FOLLOWING
+ID: 7 NAME:      Even, HAS  0 FOLLOWERS
+ID: 5 NAME:    Andrew, HAS  0 FOLLOWERS
+ID: 2 NAME:      Jack, HAS  0 FOLLOWERS
+ID: 6 NAME:     Chris, HAS  1 FOLLOWERS
+ID: 4 NAME:    Dustin, HAS  1 FOLLOWERS
+ID: 1 NAME:      Mark, HAS  1 FOLLOWERS
+FOLLOW FOLLOWER: 1 FOLLOWING: 2
+Successful
+FOLLOWING
+ID: 7 NAME:      Even, HAS  0 FOLLOWERS
+ID: 5 NAME:    Andrew, HAS  0 FOLLOWERS
+ID: 6 NAME:     Chris, HAS  1 FOLLOWERS
+ID: 4 NAME:    Dustin, HAS  1 FOLLOWERS
+ID: 2 NAME:      Jack, HAS  1 FOLLOWERS
+ID: 1 NAME:      Mark, HAS  1 FOLLOWERS
+FOLLOW FOLLOWER: 1 FOLLOWING: 3
+Illegal parameters
+POPULAR K: 1
+ID: 6 NAME:     Chris IS POPULAR
+ID: 4 NAME:    Dustin IS POPULAR
+ID: 2 NAME:      Jack IS POPULAR
+ID: 1 NAME:      Mark IS POPULAR
+ADD USER Name:      Jeff Age:34
+ADD USER ID: 3 Name:      Jeff Age:34
+FOLLOW FOLLOWER: 3 FOLLOWING: 1
+Successful
+STAR K: 1
+Name:      Mark IS STAR
+SUGGEST K: 1
+YOU MAY KNOW:      Chris
