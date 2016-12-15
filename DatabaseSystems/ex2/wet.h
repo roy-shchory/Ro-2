@@ -13,8 +13,8 @@
 
 /* Update these two macros to your account's details */
 /* USERNAME = t2 user, PASSWORD = your id number     */
-#define USERNAME "cs236363"
-#define PASSWORD "321773210"
+#define USERNAME "sron1995"
+#define PASSWORD "315374934"
 
 /* DO NOT change the names of the macros -      */
 /* your submitted program will fail compilation */

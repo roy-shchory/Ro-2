@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "wet.h"
 #include "libpq-fe.h"
 
@@ -19,8 +21,59 @@ int main(int argc, char** argv) {
 }
 
 /*************************************************************************************/
+bool isOk(PGresult *res) {
+    if (!res || (PQresultStatus(res) != PGRES_TUPLES_OK && PQresultStatus(res) != PGRES_COMMAND_OK)) {
+        fprintf(stderr, "Error executing query: %s\n", PQresultErrorMessage(res));
+        return false;
+    }
+    return true;
+}
+
+bool isEmpty(PGresult *res) {
+    return PQntuples(res) == 0;
+}
+
 // The functions you have to implement
 void* addUser(char* Name, int Age) {
+    PGresult *res;
+    char cmd[500];
+    char *newID_query;
+    int newID = 1;
+
+    sprintf(cmd, "SELECT * FROM Users");
+    res = PQexec(conn, cmd);
+
+    if(!isOk(res)) {
+        PQclear(res);
+        return NULL;
+    } else if(isEmpty(res)) {
+        newID_query = "1";
+    } else {
+        newID_query = "(SELECT MIN(ID) AS ID FROM ("
+                "SELECT ID + 1 AS ID FROM Users "
+                "EXCEPT "
+                "SELECT ID FROM Users) O"
+                ")"; // will find the next good ID
+
+        // find the new id (only for the printing part)
+        sprintf(cmd, newID_query);
+        PQclear(res); // clear result
+
+        res = PQexec(conn, newID_query);
+        newID = atoi(PQgetvalue(res, 0, 0));
+    }
+
+    PQclear(res); // clear result
+
+    sprintf(cmd, "INSERT INTO Users VALUES(%s, '%s', %d)", newID_query, Name, Age); // note that we didn't use the previous queries result
+    res = PQexec(conn, cmd);
+
+    if(isOk(res)) {
+        printf(ADD_USER, Name, Age);
+        printf(ADD_USER_SUCCESS, newID, Name, Age);
+    }
+
+    PQclear(res); // clear result
     return NULL;
 }
 void* removeUser(int ID) {

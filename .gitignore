@@ -12,3 +12,5 @@
 hs_err_pid*
 *.classpath
 *.tmp
+DatabaseSystems/ex2/.idea/
+DatabaseSystems/ex2/CMakeLists.txt
