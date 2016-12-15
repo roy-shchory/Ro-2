@@ -29,21 +29,31 @@ bool isOk(PGresult *res) {
     return true;
 }
 
-#define TEST_RES(res) if(!isOk(res)) { \
-                    PQclear(res); \
-                    return NULL; }
-
 bool isEmpty(PGresult *res) {
     return PQntuples(res) == 0;
 }
 
-bool isIdExist(int ID) {
+#define MAKE_AND_TEST_RES(res, cmd_in) do { if(!isOk(res = PQexec(conn, cmd_in))) { \
+                    PQclear(res); \
+                    return NULL; }} while(0)
 
-}
+#define TEST_NOT_EMPTY(res, cmd_in, errorMsg) do{ \
+                        MAKE_AND_TEST_RES(res, cmd_in); \
+                        if(!isEmpty(res)) { \
+                            printf(errorMsg); \
+                            PQclear(res); \
+                            return NULL; } \
+                        PQclear(res); } while(0)
 
-bool isFollowing(int ID1, int ID2) {
+#define TEST_ID_EXIST(res, cmd, id) do{ \
+                        sprintf(cmd, "SELECT * FROM Users WHERE ID = %d", id); \
+                        TEST_NOT_EMPTY(res, cmd, ILL_PARAMS);\
+                        } while(0)
 
-}
+#define TEST_IDS_FOLLOW(res, cmd, id1, id2) do{ \
+                        sprintf(cmd, "SELECT * FROM Follows WHERE ID1 = %d AND ID2 = %d", ID1, ID2); \
+                        TEST_NOT_EMPTY(res, cmd, NOT_APPLICABLE);\
+                        } while(0)
 
 // The functions you have to implement
 void* addUser(char* Name, int Age) {
@@ -54,7 +64,7 @@ void* addUser(char* Name, int Age) {
 
     // part 1 - find out if the Users table is empty
     sprintf(cmd, "SELECT * FROM Users");
-    TEST_RES(res = PQexec(conn, cmd));
+    MAKE_AND_TEST_RES(res, cmd);
 
     if(isEmpty(res)) {
         // if Users is empty, the new ID will be 1
@@ -78,7 +88,7 @@ void* addUser(char* Name, int Age) {
         sprintf(cmd, newID_query);
         PQclear(res); // clear result
 
-        TEST_RES(res = PQexec(conn, newID_query));
+        MAKE_AND_TEST_RES(res, newID_query);
         newID = atoi(PQgetvalue(res, 0, 0));
     }
 
@@ -86,7 +96,7 @@ void* addUser(char* Name, int Age) {
 
     sprintf(cmd, "INSERT INTO Users VALUES(%s, '%s', %d)", newID_query, Name, Age);
         // note that we didn't use the previous queries result. We used the sub-query as is
-    TEST_RES(res = PQexec(conn, cmd));
+    MAKE_AND_TEST_RES(res, cmd);
 
     printf(ADD_USER, Name, Age);
     printf(ADD_USER_SUCCESS, newID, Name, Age);
@@ -98,6 +108,18 @@ void* removeUser(int ID) {
     return NULL;
 }
 void* follow(int ID1, int ID2) {
+    PGresult *res;
+    char cmd[500];
+
+    TEST_ID_EXIST(res, cmd, ID1);
+    TEST_ID_EXIST(res, cmd, ID2);
+
+    TEST_IDS_FOLLOW(res, cmd, ID1, ID2);
+
+    sprintf(cmd, "INSERT INTO Follows VALUES(%d, %d)", ID1, ID2);
+    MAKE_AND_TEST_RES(res, cmd);
+
+    printf(SUCCESSFUL);
     return NULL;
 }
 void* unfollow(int ID1, int ID2) {
