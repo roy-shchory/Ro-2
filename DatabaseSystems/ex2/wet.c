@@ -37,6 +37,8 @@ bool isEmpty(PGresult *res) {
                     PQclear(res); \
                     return NULL; }} while(0)
 
+#define TEST_AND_CLEAR_RES(res, cmd_in) do { MAKE_AND_TEST_RES(res, cmd_in); PQclear(res); } while(0)
+
 #define TEST_NOT_EMPTY(res, cmd_in, errorMsg) do{ \
                         MAKE_AND_TEST_RES(res, cmd_in); \
                         if(!isEmpty(res)) { \
@@ -54,6 +56,21 @@ bool isEmpty(PGresult *res) {
                         sprintf(cmd, "SELECT * FROM Follows WHERE ID1 = %d AND ID2 = %d", ID1, ID2); \
                         TEST_NOT_EMPTY(res, cmd, NOT_APPLICABLE);\
                         } while(0)
+
+void* follow_unfollow_aux(char *cmd_in, int ID1, int ID2) {
+    PGresult *res;
+    char cmd[500];
+
+    TEST_ID_EXIST(res, cmd, ID1);
+    TEST_ID_EXIST(res, cmd, ID2);
+
+    TEST_IDS_FOLLOW(res, cmd, ID1, ID2);
+
+    TEST_AND_CLEAR_RES(res, cmd_in);
+
+    printf(SUCCESSFUL);
+    return NULL;
+}
 
 // The functions you have to implement
 void* addUser(char* Name, int Age) {
@@ -108,21 +125,23 @@ void* removeUser(int ID) {
     return NULL;
 }
 void* follow(int ID1, int ID2) {
-    PGresult *res;
     char cmd[500];
 
-    TEST_ID_EXIST(res, cmd, ID1);
-    TEST_ID_EXIST(res, cmd, ID2);
-
-    TEST_IDS_FOLLOW(res, cmd, ID1, ID2);
+    printf(FOLLOW, ID1, ID2);
 
     sprintf(cmd, "INSERT INTO Follows VALUES(%d, %d)", ID1, ID2);
-    MAKE_AND_TEST_RES(res, cmd);
+    follow_unfollow_aux(cmd, ID1, ID2);
 
-    printf(SUCCESSFUL);
     return NULL;
 }
 void* unfollow(int ID1, int ID2) {
+    char cmd[500];
+
+    printf(UNFOLLOW, ID1, ID2);
+
+    sprintf(cmd, "DELETE FROM Follows WHERE ID1 = %d AND ID2 = %d", ID1, ID2);
+    follow_unfollow_aux(cmd, ID1, ID2);
+
     return NULL;
 }
 void* following() {
