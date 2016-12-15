@@ -29,8 +29,20 @@ bool isOk(PGresult *res) {
     return true;
 }
 
+#define TEST_RES(res) if(!isOk(res)) { \
+                    PQclear(res); \
+                    return NULL; }
+
 bool isEmpty(PGresult *res) {
     return PQntuples(res) == 0;
+}
+
+bool isIdExist(int ID) {
+
+}
+
+bool isFollowing(int ID1, int ID2) {
+
 }
 
 // The functions you have to implement
@@ -40,38 +52,44 @@ void* addUser(char* Name, int Age) {
     char *newID_query;
     int newID = 1;
 
+    // part 1 - find out if the Users table is empty
     sprintf(cmd, "SELECT * FROM Users");
-    res = PQexec(conn, cmd);
+    TEST_RES(res = PQexec(conn, cmd));
 
-    if(!isOk(res)) {
-        PQclear(res);
-        return NULL;
-    } else if(isEmpty(res)) {
+    if(isEmpty(res)) {
+        // if Users is empty, the new ID will be 1
         newID_query = "1";
     } else {
+        // else Users isn't empty
+        // we will create a sub-query and insert it to the INSERT INTO query
+
+        // The idea is to take all of the IDs + 1, and keep only those that are not original IDs.
+        //      for example:
+        //      IDs = (1, 2, 4, 5); IDs+1 = (2, 3, 5, 6)
+        //      IDs+1 EXCEPT IDs = (3, 6)
+        //      from here we take the min -> 3
         newID_query = "(SELECT MIN(ID) AS ID FROM ("
                 "SELECT ID + 1 AS ID FROM Users "
                 "EXCEPT "
                 "SELECT ID FROM Users) O"
                 ")"; // will find the next good ID
 
-        // find the new id (only for the printing part)
+        // find the new id (only for the printing part later)
         sprintf(cmd, newID_query);
         PQclear(res); // clear result
 
-        res = PQexec(conn, newID_query);
+        TEST_RES(res = PQexec(conn, newID_query));
         newID = atoi(PQgetvalue(res, 0, 0));
     }
 
     PQclear(res); // clear result
 
-    sprintf(cmd, "INSERT INTO Users VALUES(%s, '%s', %d)", newID_query, Name, Age); // note that we didn't use the previous queries result
-    res = PQexec(conn, cmd);
+    sprintf(cmd, "INSERT INTO Users VALUES(%s, '%s', %d)", newID_query, Name, Age);
+        // note that we didn't use the previous queries result. We used the sub-query as is
+    TEST_RES(res = PQexec(conn, cmd));
 
-    if(isOk(res)) {
-        printf(ADD_USER, Name, Age);
-        printf(ADD_USER_SUCCESS, newID, Name, Age);
-    }
+    printf(ADD_USER, Name, Age);
+    printf(ADD_USER_SUCCESS, newID, Name, Age);
 
     PQclear(res); // clear result
     return NULL;
