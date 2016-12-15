@@ -56,10 +56,6 @@ bool isEmpty(PGresult *res) {
                         TEST_NOT_EMPTY(res, cmd, ILL_PARAMS);\
                         } while(0)
 
-void* follow_unfollow_aux(char *cmd_in, int ID1, int ID2) {
-
-}
-
 // The functions you have to implement
 void* addUser(char* Name, int Age) {
     PGresult *res;
