@@ -21,6 +21,8 @@ int main(int argc, char** argv) {
 }
 
 /*************************************************************************************/
+#define CMD_BUFFER_SIZE 500
+
 bool isOk(PGresult *res) {
     if (!res || (PQresultStatus(res) != PGRES_TUPLES_OK && PQresultStatus(res) != PGRES_COMMAND_OK)) {
         fprintf(stderr, "Error executing query: %s\n", PQresultErrorMessage(res));
@@ -37,32 +39,32 @@ bool isEmpty(PGresult *res) {
                     PQclear(res); \
                     return NULL; }} while(0)
 
-#define EXECUTE_AND_CLEAR(res, cmd_in) do { EXECUTE(res, cmd_in); PQclear(res); } while(0)
+#define EXECUTE_CMD(cmd) do { PGresult *_abcd_res; EXECUTE(_abcd_res, cmd); PQclear(_abcd_res); } while(0)
 
-#define _EXECUTE_AND_ASSERT_AND_CLEAR_AUX(res, cmd_in, errorMsg, toggle)    do{ \
-                                                                                EXECUTE(res, cmd_in); \
-                                                                                if(isEmpty(res) ^ toggle) { \
-                                                                                    printf(errorMsg); \
-                                                                                    PQclear(res); \
-                                                                                    return NULL; } \
-                                                                                PQclear(res); \
-                                                                            } while(0)
+#define _ASSERT_CMD_AUX(cmd, errorMsg, toggle)  do{ \
+                                                    PGresult *_abcd_res; \
+                                                    EXECUTE(_abcd_res, cmd); \
+                                                    if(isEmpty(_abcd_res) ^ toggle) { \
+                                                        printf(errorMsg); \
+                                                        PQclear(_abcd_res); \
+                                                        return NULL; } \
+                                                    PQclear(_abcd_res); \
+                                                } while(0)
 
-#define EXECUTE_AND_ASSERT_NOT_EMPTY_AND_CLEAR(res, cmd_in, errorMsg) _EXECUTE_AND_ASSERT_AND_CLEAR_AUX(res, cmd_in, errorMsg, false)
+#define ASSERT_NOT_EMPTY(cmd, errorMsg) _ASSERT_CMD_AUX(cmd, errorMsg, false)
 
-#define EXECUTE_AND_ASSERT_EMPTY_AND_CLEAR(res, cmd_in, errorMsg) _EXECUTE_AND_ASSERT_AND_CLEAR_AUX(res, cmd_in, errorMsg, true)
+#define ASSERT_EMPTY(cmd, errorMsg) _ASSERT_CMD_AUX(cmd, errorMsg, true)
 
 #define ASSERT_ID_EXIST(id) do{ \
-                                PGresult *_abcd_res; \
-                                char _abcd_cmd[250]; \
+                                char _abcd_cmd[CMD_BUFFER_SIZE]; \
                                 sprintf(_abcd_cmd, "SELECT * FROM Users WHERE ID = %d", id); \
-                                EXECUTE_AND_ASSERT_NOT_EMPTY_AND_CLEAR(res, _abcd_cmd, ILL_PARAMS);\
+                                ASSERT_NOT_EMPTY(_abcd_cmd, ILL_PARAMS);\
                             } while(0)
 
 // The functions you have to implement
 void* addUser(char* Name, int Age) {
     PGresult *res;
-    char cmd[500];
+    char cmd[CMD_BUFFER_SIZE];
     char *newID_query;
     int newID = 1;
 
@@ -109,24 +111,22 @@ void* addUser(char* Name, int Age) {
     return NULL;
 }
 void* removeUser(int ID) {
-    PGresult *res;
-    char cmd[500];
+    char cmd[CMD_BUFFER_SIZE];
 
     printf(REMOVE_USER, ID);
 
     ASSERT_ID_EXIST(ID);
 
     sprintf(cmd, "DELETE FROM Users WHERE ID = %d", ID);
-    EXECUTE_AND_CLEAR(res, cmd);
+    EXECUTE_CMD(cmd);
 
     sprintf(cmd, "DELETE FROM Follows WHERE ID1 = %d OR ID2 = %d", ID, ID);
-    EXECUTE_AND_CLEAR(res, cmd);
+    EXECUTE_CMD(cmd);
 
     return NULL;
 }
 void* follow(int ID1, int ID2) {
-    PGresult *res;
-    char cmd[500];
+    char cmd[CMD_BUFFER_SIZE];
 
     printf(FOLLOW, ID1, ID2);
 
@@ -134,17 +134,16 @@ void* follow(int ID1, int ID2) {
     ASSERT_ID_EXIST(ID2);
 
     sprintf(cmd, "SELECT * FROM Follows WHERE ID1 = %d AND ID2 = %d", ID1, ID2);
-    EXECUTE_AND_ASSERT_EMPTY_AND_CLEAR(res, cmd, NOT_APPLICABLE);
+    ASSERT_EMPTY(cmd, NOT_APPLICABLE);
 
     sprintf(cmd, "INSERT INTO Follows VALUES(%d, %d)", ID1, ID2);
-    EXECUTE_AND_CLEAR(res, cmd);
+    EXECUTE_CMD(cmd);
 
     printf(SUCCESSFUL);
     return NULL;
 }
 void* unfollow(int ID1, int ID2) {
-    PGresult *res;
-    char cmd[500];
+    char cmd[CMD_BUFFER_SIZE];
 
     printf(UNFOLLOW, ID1, ID2);
 
@@ -152,15 +151,34 @@ void* unfollow(int ID1, int ID2) {
     ASSERT_ID_EXIST(ID2);
 
     sprintf(cmd, "SELECT * FROM Follows WHERE ID1 = %d AND ID2 = %d", ID1, ID2);
-    EXECUTE_AND_ASSERT_NOT_EMPTY_AND_CLEAR(res, cmd, NOT_APPLICABLE);
+    ASSERT_NOT_EMPTY(cmd, NOT_APPLICABLE);
 
     sprintf(cmd, "DELETE FROM Follows WHERE ID1 = %d AND ID2 = %d", ID1, ID2);
-    EXECUTE_AND_CLEAR(res, cmd);
+    EXECUTE_CMD(cmd);
 
     printf(SUCCESSFUL);
     return NULL;
 }
 void* following() {
+    PGresult *res;
+    char cmd[CMD_BUFFER_SIZE];
+    int i = 0;
+
+    printf(FOLLOWING);
+
+    sprintf(cmd, "SELECT * FROM Users");
+    ASSERT_NOT_EMPTY(cmd, EMPTY);
+
+    sprintf(cmd, "SELECT ID, Name, COUNT(ID1) AS c "
+            "FROM (Users LEFT JOIN Follows ON Users.ID = Follows.ID2) O "
+            "GROUP BY ID, Name "
+            "ORDER BY c ASC, ID DESC");
+    EXECUTE(res, cmd);
+
+    for (; i < PQntuples(res); ++i) {
+        printf(FOLLOWING_RESULT, atoi(PQgetvalue(res, i, 0)), PQgetvalue(res, i, 1), atoi(PQgetvalue(res, i, 2)));
+    }
+
     return NULL;
 }
 void* popular(int K) {
