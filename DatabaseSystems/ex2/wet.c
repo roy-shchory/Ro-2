@@ -5,7 +5,7 @@
 
 // This is the global connection object
 PGconn *conn;
-PGresult *res;
+//PGresult *res;
 
 #define CMD_SIZE 550
 
@@ -21,8 +21,6 @@ int main(int argc, char** argv) {
 }
 
 /*************************************************************************************/
-#define CMD_BUFFER_SIZE 500
-
 bool isOk(PGresult *res) {
     if (!res || (PQresultStatus(res) != PGRES_TUPLES_OK && PQresultStatus(res) != PGRES_COMMAND_OK)) {
         fprintf(stderr, "Error executing query: %s\n", PQresultErrorMessage(res));
@@ -56,17 +54,32 @@ bool isEmpty(PGresult *res) {
 #define ASSERT_EMPTY(cmd, errorMsg) _ASSERT_CMD_AUX(cmd, errorMsg, true)
 
 #define ASSERT_ID_EXIST(id) do{ \
-                                char _abcd_cmd[CMD_BUFFER_SIZE]; \
+                                char _abcd_cmd[CMD_SIZE]; \
                                 sprintf(_abcd_cmd, "SELECT * FROM Users WHERE ID = %d", id); \
                                 ASSERT_NOT_EMPTY(_abcd_cmd, ILL_PARAMS);\
                             } while(0)
 
+#define EXECUTE_AND_ASSERT_NOT_EMPTY(res, cmd) do{ \
+                                                    EXECUTE(res, cmd); \
+                                                    if(isEmpty(res)) { \
+                                                        printf(EMPTY); \
+                                                        PQclear(res); \
+                                                        return NULL; } \
+                                                } while(0)
+
+#define FOLLOWING_QUERY_STR     "SELECT ID, Name, COUNT(ID1) AS c \
+                                FROM (Users LEFT JOIN Follows ON Users.ID = Follows.ID2) O \
+                                GROUP BY ID, Name \
+                                ORDER BY c ASC, ID DESC"
+
 // The functions you have to implement
 void* addUser(char* Name, int Age) {
     PGresult *res;
-    char cmd[CMD_BUFFER_SIZE];
+    char cmd[CMD_SIZE];
     char *newID_query;
     int newID = 1;
+
+    printf(ADD_USER, Name, Age);
 
     // part 1 - find out if the Users table is empty
     sprintf(cmd, "SELECT * FROM Users");
@@ -104,14 +117,13 @@ void* addUser(char* Name, int Age) {
         // note that we didn't use the previous queries result. We used the sub-query as is
     EXECUTE(res, cmd);
 
-    printf(ADD_USER, Name, Age);
     printf(ADD_USER_SUCCESS, newID, Name, Age);
 
     PQclear(res); // clear result
     return NULL;
 }
 void* removeUser(int ID) {
-    char cmd[CMD_BUFFER_SIZE];
+    char cmd[CMD_SIZE];
 
     printf(REMOVE_USER, ID);
 
@@ -126,7 +138,7 @@ void* removeUser(int ID) {
     return NULL;
 }
 void* follow(int ID1, int ID2) {
-    char cmd[CMD_BUFFER_SIZE];
+    char cmd[CMD_SIZE];
 
     printf(FOLLOW, ID1, ID2);
 
@@ -143,7 +155,7 @@ void* follow(int ID1, int ID2) {
     return NULL;
 }
 void* unfollow(int ID1, int ID2) {
-    char cmd[CMD_BUFFER_SIZE];
+    char cmd[CMD_SIZE];
 
     printf(UNFOLLOW, ID1, ID2);
 
@@ -161,32 +173,106 @@ void* unfollow(int ID1, int ID2) {
 }
 void* following() {
     PGresult *res;
-    char cmd[CMD_BUFFER_SIZE];
+    char cmd[CMD_SIZE];
     int i = 0;
 
     printf(FOLLOWING);
 
-    sprintf(cmd, "SELECT * FROM Users");
-    ASSERT_NOT_EMPTY(cmd, EMPTY);
-
-    sprintf(cmd, "SELECT ID, Name, COUNT(ID1) AS c "
-            "FROM (Users LEFT JOIN Follows ON Users.ID = Follows.ID2) O "
-            "GROUP BY ID, Name "
-            "ORDER BY c ASC, ID DESC");
-    EXECUTE(res, cmd);
+    sprintf(cmd, FOLLOWING_QUERY_STR);
+    EXECUTE_AND_ASSERT_NOT_EMPTY(res, cmd);
 
     for (; i < PQntuples(res); ++i) {
         printf(FOLLOWING_RESULT, atoi(PQgetvalue(res, i, 0)), PQgetvalue(res, i, 1), atoi(PQgetvalue(res, i, 2)));
     }
 
+    PQclear(res);
     return NULL;
 }
 void* popular(int K) {
+    PGresult *res;
+    char cmd[CMD_SIZE];
+    int i = 0;
+
+    printf(POPULAR, K);
+
+    sprintf(cmd, "SELECT ID, Name FROM (%s) F WHERE c >= %d ORDER BY ID DESC", FOLLOWING_QUERY_STR, K);
+    EXECUTE_AND_ASSERT_NOT_EMPTY(res, cmd);
+
+    for (; i < PQntuples(res); ++i) {
+        printf(POPULAR_RESULT, atoi(PQgetvalue(res, i, 0)), PQgetvalue(res, i, 1));
+    }
+
+    PQclear(res);
     return NULL;
 }
 void* star(int K) {
+    PGresult *res;
+    char cmd[CMD_SIZE];
+    int i = 0;
+
+    printf(STAR, K);
+
+    // crate temp table:
+    // (the Following table with ages)
+    char* following_aux = "CREATE TABLE temp_following AS "
+            "SELECT "
+            "u1.ID as id1, u1.age AS age1, u2.id AS id2, u2.age AS age2 "
+            "FROM "
+            "Follows LEFT JOIN Users AS u1 ON Follows.ID1 = u1.ID "
+            "LEFT JOIN Users AS u2 ON Follows.ID2 = u2.ID";
+    EXECUTE_CMD(following_aux);
+
+    // crate temp table:
+    // this table has 3 columns: (ID; average age of ID's followers; average age of users that ID follows, OR ID's age if he doesn't follow anyone)
+    // we keep only the rows where the second column's value is bigger than the third column's value
+    char *star_aux = "CREATE TABLE temp_star_aux AS "
+            "SELECT "
+            "Users.ID as id, "
+            "Name, "
+            "COALESCE(AVG(f2.age1), 0) AS avg_followers, "
+            "CASE WHEN COUNT(f1.age2) = 0 THEN age ELSE AVG(f1.age2) END as avg_following_or_age "
+            "FROM "
+            "Users LEFT JOIN temp_following AS f1 ON Users.ID = f1.id1 "
+            "LEFT JOIN temp_following AS f2 ON Users.ID = f2.id2 "
+            "GROUP BY id, Name, Age";
+
+    EXECUTE_CMD(star_aux);
+    // drop temp table:
+    EXECUTE_CMD("DROP TABLE temp_following");
+
+    // find the users from star_aux that are popular:
+    sprintf(cmd, "SELECT S.Name "
+            "FROM "
+            "(SELECT id, Name FROM temp_star_aux WHERE avg_followers > avg_following_or_age) S "
+            "LEFT JOIN (%s) F ON S.id = F.ID "
+            "WHERE F.c >= %d "
+            "ORDER BY S.Name", FOLLOWING_QUERY_STR, K);
+    EXECUTE(res, cmd);
+
+    // drop temp table:
+    EXECUTE_CMD("DROP TABLE temp_star_aux");
+
+    if(isEmpty(res)) {
+        printf(EMPTY);
+        PQclear(res);
+        return NULL;
+    }
+
+    for (; i < PQntuples(res); ++i) {
+        printf(STAR_RESULT, PQgetvalue(res, i, 0));
+    }
+
+    PQclear(res);
     return NULL;
 }
 void* suggest(int ID) {
+    PGresult *res;
+    char cmd[CMD_SIZE];
+    int i = 0;
+
+    printf(SUGGEST, ID);
+
+
+
     return NULL;
 }
