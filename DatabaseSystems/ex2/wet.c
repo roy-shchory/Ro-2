@@ -314,8 +314,8 @@ void* suggest(int ID) {
     //OR (ID1 IN (SELECT ID1 FROM Follows) AND ID2 IN (SELECT ID2 FROM Follows))
 
     // find the suggest list for ID:
-    sprintf(cmd, "SELECT DISTINCT Users.Name FROM "
-            "temp_extended_follows2 LEFT JOIN Users ON temp_extended_follows2.ID = Users.ID "
+    sprintf(cmd, "SELECT Users.Name FROM "
+            "(SELECT DISTINCT * FROM temp_extended_follows2) T LEFT JOIN Users ON T.ID = Users.ID "
             "ORDER BY Name ASC");
     EXECUTE(res, cmd);
     EXECUTE_CMD("DROP TABLE temp_extended_follows2");
