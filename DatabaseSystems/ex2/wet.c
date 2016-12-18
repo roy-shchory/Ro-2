@@ -135,6 +135,7 @@ void* removeUser(int ID) {
     sprintf(cmd, "DELETE FROM Follows WHERE ID1 = %d OR ID2 = %d", ID, ID);
     EXECUTE_CMD(cmd);
 
+    printf(SUCCESSFUL);
     return NULL;
 }
 void* follow(int ID1, int ID2) {
@@ -142,12 +143,20 @@ void* follow(int ID1, int ID2) {
 
     printf(FOLLOW, ID1, ID2);
 
+    // test for type 1 errors:
+    if (ID1 == ID2) {
+        printf(ILL_PARAMS);
+        return NULL;
+    }
+
     ASSERT_ID_EXIST(ID1);
     ASSERT_ID_EXIST(ID2);
 
+    // test for type 2 error:
     sprintf(cmd, "SELECT * FROM Follows WHERE ID1 = %d AND ID2 = %d", ID1, ID2);
     ASSERT_EMPTY(cmd, NOT_APPLICABLE);
 
+    // insert cmd:
     sprintf(cmd, "INSERT INTO Follows VALUES(%d, %d)", ID1, ID2);
     EXECUTE_CMD(cmd);
 
@@ -230,7 +239,7 @@ void* star(int K) {
             "Users.ID as id, "
             "Name, "
             "COALESCE(AVG(f2.age1), 0) AS avg_followers, "
-            "CASE WHEN COUNT(f1.age2) = 0 THEN age ELSE AVG(f1.age2) END as avg_following_or_age "
+            "COALESCE(AVG(f1.age2), age) AS avg_following_or_age "
             "FROM "
             "Users LEFT JOIN temp_following AS f1 ON Users.ID = f1.id1 "
             "LEFT JOIN temp_following AS f2 ON Users.ID = f2.id2 "
@@ -268,11 +277,59 @@ void* star(int K) {
 void* suggest(int ID) {
     PGresult *res;
     char cmd[CMD_SIZE];
-    int i = 0;
+    int i;
 
     printf(SUGGEST, ID);
 
+    ASSERT_ID_EXIST(ID);
 
+    // get num of rows in Follows:
+    EXECUTE(res, "SELECT * FROM Follows");
+    int numOfRowsInFollows = PQntuples(res);
+    PQclear(res);
 
+    // create a temp table (temp_extended_follows):
+    // this table will have 2 columns (id1, id2).
+    // (id1, id2) is in the table if there is a followers path from id1 to id2 of any length
+    EXECUTE_CMD("CREATE TABLE temp_extended_follows AS SELECT * FROM Follows");
+
+    // add to temp_extended_follows:
+    for (i = 0; i < numOfRowsInFollows; ++i) {
+        EXECUTE_CMD("INSERT INTO temp_extended_follows (ID1, ID2) SELECT tef.ID1, Follows.ID2 "
+                            "FROM "
+                            "temp_extended_follows AS tef LEFT JOIN Follows ON tef.ID2 = Follows.ID1 "
+                            "WHERE Follows.ID2 IS NOT NULL");
+    }
+
+    // remove paths of len 0 or 1. place result in temp_extended_follows2:
+    EXECUTE_CMD("DELETE FROM temp_extended_follows WHERE ID1 = ID2");
+    EXECUTE_CMD("CREATE TABLE temp_extended_follows2 AS "
+                        "SELECT * FROM temp_extended_follows "
+                        "EXCEPT "
+                        "SELECT * FROM Follows");
+    EXECUTE_CMD("DROP TABLE temp_extended_follows");
+
+    //OR (ID1 IN (SELECT ID1 FROM Follows) AND ID2 IN (SELECT ID2 FROM Follows))
+
+    // find the suggest list for ID:
+    sprintf(cmd, "SELECT DISTINCT Users.Name FROM "
+            "temp_extended_follows2 LEFT JOIN Users ON temp_extended_follows2.ID2 = Users.ID "
+            "WHERE ID1 = %d "
+            "ORDER BY Name ASC", ID);
+    EXECUTE(res, cmd);
+    EXECUTE_CMD("DROP TABLE temp_extended_follows2");
+
+    // print stuff:
+    if(isEmpty(res)) {
+        printf(EMPTY);
+        PQclear(res);
+        return NULL;
+    }
+
+    for (i = 0; i < PQntuples(res); ++i) {
+        printf(SUGGEST_RESULT, PQgetvalue(res, i, 0));
+    }
+
+    PQclear(res);
     return NULL;
 }
