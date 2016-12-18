@@ -289,33 +289,34 @@ void* suggest(int ID) {
     PQclear(res);
 
     // create a temp table (temp_extended_follows):
-    // this table will have 2 columns (id1, id2).
-    // (id1, id2) is in the table if there is a followers path from id1 to id2 of any length
-    EXECUTE_CMD("CREATE TABLE temp_extended_follows AS SELECT * FROM Follows");
+    // this table will have 1 column of ids.
+    // id is in the table if there is a followers path from ID to id of any length
+    sprintf(cmd, "CREATE TABLE temp_extended_follows AS SELECT ID2 AS ID FROM Follows WHERE ID1 = %d", ID);
+    EXECUTE_CMD(cmd);
 
     // add to temp_extended_follows:
     for (i = 0; i < numOfRowsInFollows; ++i) {
-        EXECUTE_CMD("INSERT INTO temp_extended_follows (ID1, ID2) SELECT tef.ID1, Follows.ID2 "
-                            "FROM "
-                            "temp_extended_follows AS tef LEFT JOIN Follows ON tef.ID2 = Follows.ID1 "
-                            "WHERE Follows.ID2 IS NOT NULL");
+        sprintf(cmd, "INSERT INTO temp_extended_follows SELECT DISTINCT Follows.ID2 "
+                "FROM "
+                "temp_extended_follows AS tef LEFT JOIN Follows ON tef.ID = Follows.ID1 "
+                "WHERE Follows.ID2 IS NOT NULL AND Follows.ID2 != %d", ID);
+        EXECUTE_CMD(cmd);
     }
 
-    // remove paths of len 0 or 1. place result in temp_extended_follows2:
-    EXECUTE_CMD("DELETE FROM temp_extended_follows WHERE ID1 = ID2");
-    EXECUTE_CMD("CREATE TABLE temp_extended_follows2 AS "
+    // remove paths of len 1. place result in temp_extended_follows2:
+    sprintf(cmd, "CREATE TABLE temp_extended_follows2 AS "
                         "SELECT * FROM temp_extended_follows "
                         "EXCEPT "
-                        "SELECT * FROM Follows");
+                        "SELECT Follows.ID2 AS ID FROM Follows WHERE Follows.ID1 = %d", ID);
+    EXECUTE_CMD(cmd);
     EXECUTE_CMD("DROP TABLE temp_extended_follows");
 
     //OR (ID1 IN (SELECT ID1 FROM Follows) AND ID2 IN (SELECT ID2 FROM Follows))
 
     // find the suggest list for ID:
     sprintf(cmd, "SELECT DISTINCT Users.Name FROM "
-            "temp_extended_follows2 LEFT JOIN Users ON temp_extended_follows2.ID2 = Users.ID "
-            "WHERE ID1 = %d "
-            "ORDER BY Name ASC", ID);
+            "temp_extended_follows2 LEFT JOIN Users ON temp_extended_follows2.ID = Users.ID "
+            "ORDER BY Name ASC");
     EXECUTE(res, cmd);
     EXECUTE_CMD("DROP TABLE temp_extended_follows2");
 
