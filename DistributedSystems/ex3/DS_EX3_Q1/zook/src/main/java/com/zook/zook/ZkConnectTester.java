@@ -20,11 +20,11 @@ public class ZkConnectTester {
 		zk.getChildren("/", new Watcher() {
 			
 			public void process(WatchedEvent event) {
-				// TODO Auto-generated method stub
 				System.out.println(event.getPath());
-				
 			}
 		});
+		
+		
 		
 		while (true) {
 			
