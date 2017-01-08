@@ -12,8 +12,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
 
 public class ZkConnector {
-	public static final String EX_ROOT = "/ds";
-	
 	ZooKeeper zookeeper;
 	java.util.concurrent.CountDownLatch connectedSignal = new java.util.concurrent.CountDownLatch(1);
 
@@ -46,7 +44,7 @@ public class ZkConnector {
 	}
 	
 	private void init_and_clean() throws KeeperException, InterruptedException {
-		if (zookeeper.exists(EX_ROOT, false) == null)
-			zookeeper.create(EX_ROOT, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+		if (zookeeper.exists(ZooHelper.EX_ROOT, false) == null)
+			zookeeper.create(ZooHelper.EX_ROOT, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 	}
 }

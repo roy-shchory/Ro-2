@@ -14,7 +14,7 @@ import org.apache.zookeeper.ZooKeeper;
  * from: https://zookeeper.apache.org/doc/trunk/zookeeperTutorial.html
  */
 public class Barrier implements Watcher {
-	private static final String PATH = ZkConnector.EX_ROOT + "/zk_barrier";
+	private static final String PATH = ZooHelper.BARRIER_ROOT;
 	
 	private ZooKeeper zk;
 	private Integer mutex = Integer.valueOf(-1);
@@ -35,13 +35,7 @@ public class Barrier implements Watcher {
 		this.size = size;
 		
 		// Create barrier node
-		if (zk != null)
-			try {
-				zk.create(PATH, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-			} catch (KeeperException e) {
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		ZooHelper.createNewNode(zk, PATH, new byte[0], CreateMode.PERSISTENT);
 	}
 
 	/**
