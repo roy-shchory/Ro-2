@@ -77,5 +77,9 @@ public class FailureDetector {
 	public List<Integer> getSucpected() {
 		return getLivenessAux(false);
 	}
+	
+	public boolean isAlive(int id) {
+		return getUnsucpected().contains(id);
+	}
 	// [end]
 }

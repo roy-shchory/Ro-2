@@ -12,39 +12,45 @@ import org.apache.zookeeper.ZooKeeper;
 
 public class ZkConnectTester {
 	public static void main(String[] args) throws IOException, InterruptedException, KeeperException {
-		// final Semaphore sem1 = new Semaphore(0, true);
-
-		final Object i = new Object();
-		final Object j = new Object();
-
-		System.out.println("> first");
-		new Thread(() -> {
-			try {
-				Thread.sleep(1000);
-
-				System.out.println("# first");
-				synchronized (i) {
-					i.notify();
-				}
-				Thread.sleep(1000);
-				synchronized (j) {
-					j.notify();
-				}
-				System.out.println("# last");
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}).start();
-
-		// sem1.acquire();
-		synchronized (j) {
-			synchronized (i) {
-				i.wait();
-				j.wait();
-			}
-		}
-		System.out.println("> last");
+		
+		
+		
+		
+		
+		
+//		// final Semaphore sem1 = new Semaphore(0, true);
+//
+//		final Object i = new Object();
+//		final Object j = new Object();
+//
+//		System.out.println("> first");
+//		new Thread(() -> {
+//			try {
+//				Thread.sleep(1000);
+//
+//				System.out.println("# first");
+//				synchronized (i) {
+//					i.notify();
+//				}
+//				Thread.sleep(1000);
+//				synchronized (j) {
+//					j.notify();
+//				}
+//				System.out.println("# last");
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//		}).start();
+//
+//		// sem1.acquire();
+//		synchronized (j) {
+//			synchronized (i) {
+//				i.wait();
+//				j.wait();
+//			}
+//		}
+//		System.out.println("> last");
 
 		// ZooKeeper zk;
 		// ZkConnector zkc = new ZkConnector();

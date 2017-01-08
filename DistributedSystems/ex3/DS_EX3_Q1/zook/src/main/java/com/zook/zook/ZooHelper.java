@@ -15,11 +15,11 @@ public class ZooHelper {
 	public static final String FAILURE_DETECTOR_ROOT = EX_ROOT + "/failure_detector";
 	public static final String TRANSACTION_ROOT = EX_ROOT + "/transaction";
 
-	private static final String MODIFIED_3PC_ROOT = EX_ROOT + "/modified3pc";
+	public static final String MODIFIED_3PC_ROOT = EX_ROOT + "/modified3pc";
 	public static final String VOTES_3PC_ROOT = MODIFIED_3PC_ROOT + "/votes";
-	public static final String RESULTS_3PC_ROOT = MODIFIED_3PC_ROOT + "/result";
+	public static final String RESULT_3PC_ROOT = MODIFIED_3PC_ROOT + "/result";
 
-	private static final String CONSENSUS_ROOT = EX_ROOT + "/consensus";
+	public static final String CONSENSUS_ROOT = EX_ROOT + "/consensus";
 	public static final String ROUND_CONSENSUS_ROOT = CONSENSUS_ROOT + "/round";
 
 	public static boolean createNewNode(ZooKeeper k, String path, byte[] data, CreateMode m) {
@@ -70,5 +70,15 @@ public class ZooHelper {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	public static byte[] bool2byteArray(boolean b) {
+		byte[] a = new byte[1];
+		a[0] = (byte) (b ? 1 : 0);
+		return a;
+	}
+	
+	public static boolean byteArray2Bool(byte[] a) {
+		return a[0] == 1;
 	}
 }
