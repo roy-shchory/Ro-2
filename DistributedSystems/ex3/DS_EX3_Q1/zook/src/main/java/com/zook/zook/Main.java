@@ -39,7 +39,7 @@ public class Main {
 			int lowestId = Collections.min(fd.getUnsucpected());
 			if (id == lowestId)
 				ZooHelper.createNewNode(zooKeeper, ZooHelper.TRANSACTION_ROOT, new byte[0], CreateMode.PERSISTENT);
-			
+
 			// wait for transaction
 			waitForTransaction(zooKeeper);
 
@@ -51,17 +51,16 @@ public class Main {
 
 	private static void waitForTransaction(ZooKeeper k) {
 		Semaphore sem = new Semaphore(0);
-		
-		if (ZooHelper.checkNodeExistenceAndAddWatcher(k, ZooHelper.TRANSACTION_ROOT, new Watcher() {
-			@Override
-			public void process(WatchedEvent __) {
-				sem.release();
-			}
-		}))
-			try {
+		try {
+			if (!ZooHelper.checkNodeExistenceAndAddWatcher(k, ZooHelper.TRANSACTION_ROOT, new Watcher() {
+				@Override
+				public void process(WatchedEvent __) {
+					sem.release();
+				}
+			}))
 				sem.acquire();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 }
