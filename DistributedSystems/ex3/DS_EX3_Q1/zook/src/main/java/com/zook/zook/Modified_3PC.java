@@ -3,6 +3,7 @@ package com.zook.zook;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -11,55 +12,59 @@ public class Modified_3PC {
 
 	private ZooKeeper zooKeeper;
 	private FailureDetector failureDetector;
-
-	private int n;
-	private int id;
-	private boolean vote;
-	private String crashTime;
-	private int crashRound;
-
 	private BufferedWriter out;
 
-	public Modified_3PC(ZooKeeper zooKeeper, FailureDetector failureDetector, int n, int id, boolean vote,
-			String crashTime, int crashRound, BufferedWriter out) {
+	public Modified_3PC(ZooKeeper zooKeeper, FailureDetector failureDetector, BufferedWriter out) {
 		this.zooKeeper = zooKeeper;
 		this.failureDetector = failureDetector;
-
-		this.n = n;
-		this.id = id;
-		this.vote = vote;
-		this.crashTime = crashTime;
-		this.crashRound = crashRound;
-
 		this.out = out;
 
 		ZooHelper.createNewNode(zooKeeper, ZooHelper.MODIFIED_3PC_ROOT, new byte[0], CreateMode.PERSISTENT);
 	}
 
-	public void start(int coordinatorId) throws CrashedException, IOException, InterruptedException {
+	public boolean start(int n, int id, String crashTime, int crashRound, boolean vote, int coordinatorId)
+			throws CrashedException, IOException, InterruptedException, KeeperException {
 		// ***START 3PC_MODIFIED***
 		// if 0-V, crash!
-		if (crashRound == 0 && "V".equals(crashTime))
+		System.out.println(">> Checking if I need to crash... for (0-V) only...");
+		if (crashRound == 0 && "V".equals(crashTime)) {
+			System.out.println(">> Crashing...");
 			CrashedException.crash(out);
+		}
 
 		// send vote to coordinator (the transaction's sender):
-		byte[] voteData = new byte[1];
-		voteData[0] = (byte) (vote ? 1 : 0);
+		byte[] voteData = ZooHelper.bool2byteArray(vote);
+		System.out.println(">> Sending my vote (" + voteData[0] + ") to coordinator (" + coordinatorId + ")...");
+		ZooHelper.createNewNode(zooKeeper, ZooHelper.VOTES_3PC_ROOT, new byte[0], CreateMode.PERSISTENT);
 		ZooHelper.createNewNode(zooKeeper, ZooHelper.VOTES_3PC_ROOT + "/" + id, voteData, CreateMode.PERSISTENT);
+		System.out.println(">> Vote sent to coordinator");
 
 		// only coordinator:
 		if (id == coordinatorId) {
+			String cPrefix = ">> I'm the coordinator - ";
+
 			// only coordinator - wait for votes or until new suspicion, and
 			// send results to all:
+			System.out.println(cPrefix + "waiting for votes...");
 			byte[] voteResultData = ZooHelper.bool2byteArray(waitForVotes());
+			System.out.println(cPrefix + "got vote result: " + voteResultData[0]);
+			System.out.println(cPrefix + "sending vote result to all...");
 			ZooHelper.createNewNode(zooKeeper, ZooHelper.RESULT_3PC_ROOT, voteResultData, CreateMode.PERSISTENT);
+			System.out.println(cPrefix + "vote result sent to all...");
 		}
 
 		// wait for coordinator results, or until the coordinator's suspicion:
+		System.out.println(">> Wait for vote result from coordinator...");
 		boolean consensusInitValue = waitForCoordinatorsResult(coordinatorId);
+		System.out.println(">> Vote result received from coordinator: " + consensusInitValue);
 
 		// ***START CONSENSUS (M&R)***
-		new Consensus(zooKeeper, failureDetector, n, id, crashTime, crashRound, out).start(consensusInitValue);
+		System.out.println(">> Starting consensus with: " + consensusInitValue + "...");
+		boolean consensusResult = new Consensus(zooKeeper, failureDetector, out)
+				.start(n, id, crashTime, crashRound, consensusInitValue);
+		System.out.println(">> Finished consensus with: " + consensusResult);
+
+		return consensusResult;
 	}
 
 	// [start] coordinator code

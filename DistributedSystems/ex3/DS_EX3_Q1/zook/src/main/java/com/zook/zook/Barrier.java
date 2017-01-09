@@ -49,26 +49,8 @@ public class Barrier implements Watcher {
 		zk.create(PATH + "/" + id, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
 		while (true)
 			synchronized (mutex) {
-				List<String> list = zk.getChildren(PATH, true);
+				List<String> list = zk.getChildren(PATH, this);
 				if (list.size() >= size)
-					return true;
-				mutex.wait();
-			}
-	}
-
-	/**
-	 * Wait until all reach barrier
-	 *
-	 * @return
-	 * @throws KeeperException
-	 * @throws InterruptedException
-	 */
-	boolean leave() throws KeeperException, InterruptedException {
-		zk.delete(PATH + "/" + id, 0);
-		while (true)
-			synchronized (mutex) {
-				List<String> list = zk.getChildren(PATH, true);
-				if (list.isEmpty())
 					return true;
 				mutex.wait();
 			}

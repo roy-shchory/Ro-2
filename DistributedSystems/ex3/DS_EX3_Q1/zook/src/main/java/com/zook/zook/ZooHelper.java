@@ -20,7 +20,8 @@ public class ZooHelper {
 	public static final String RESULT_3PC_ROOT = MODIFIED_3PC_ROOT + "/result";
 
 	public static final String CONSENSUS_ROOT = EX_ROOT + "/consensus";
-	public static final String ROUND_CONSENSUS_ROOT = CONSENSUS_ROOT + "/round";
+	public static final String ROUNDS_CONSENSUS_ROOT = CONSENSUS_ROOT + "/rounds";
+	public static final String RESULT_CONSENSUS_ROOT = CONSENSUS_ROOT + "/result";
 
 	public static boolean createNewNode(ZooKeeper k, String path, byte[] data, CreateMode m) {
 		try {
@@ -35,13 +36,6 @@ public class ZooHelper {
 
 	public static boolean isNodeExist(ZooKeeper k, String path) {
 		return checkNodeExistenceAndAddWatcher(k, path, null);
-		// try {
-		// return k.exists(path, false) != null;
-		// } catch (KeeperException | InterruptedException e) {
-		// e.printStackTrace();
-		// }
-		//
-		// return false;
 	}
 
 	public static boolean checkNodeExistenceAndAddWatcher(ZooKeeper k, String path, Watcher w) {
@@ -79,6 +73,6 @@ public class ZooHelper {
 	}
 	
 	public static boolean byteArray2Bool(byte[] a) {
-		return a[0] == 1;
+		return a != null && a[0] == 1;
 	}
 }

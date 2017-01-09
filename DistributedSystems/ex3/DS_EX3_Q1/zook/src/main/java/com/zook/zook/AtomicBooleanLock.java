@@ -27,4 +27,12 @@ public class AtomicBooleanLock {
 		innerBool = releseValue;
 		notifyAll();
 	}
+	
+	public synchronized boolean isSet() {
+		return innerBool != null;
+	}
+	
+	public synchronized Boolean getInnerBool() {
+		return innerBool;
+	}
 }

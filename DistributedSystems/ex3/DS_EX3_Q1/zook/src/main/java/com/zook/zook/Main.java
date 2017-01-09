@@ -25,40 +25,61 @@ public class Main {
 		String crashTime = args[3].split("-")[1];
 		int crashRound = Integer.parseInt(args[3].split("-")[0]);
 
+		System.out.println(">> Starting node " + id + " from " + n + " nodes. Vote: " + vote + ". Crash: " + crashRound
+				+ "-" + crashTime);
+
 		try (BufferedWriter out = new BufferedWriter(new FileWriter(new File("nbac_output_" + id + ".txt")))) {
 			// init zookeeper:
 			ZooKeeper zooKeeper = new ZkConnector().connect().getZooKeeper();
+			System.out.println(">> ZooKeeper connected");
 
 			// init failure detector:
 			FailureDetector fd = new FailureDetector(zooKeeper, n, id);
+			System.out.println(">> Failure detector started");
 
 			// enter barrier:
+			System.out.println(">> Waiting for other nodes on barrier...");
 			new Barrier(zooKeeper, n, id).enter();
+			System.out.println(">> Exited barrier");
 
 			// lowest id (that didn't crash) sends the transaction to all:
 			int lowestId = Collections.min(fd.getUnsucpected());
-			if (id == lowestId)
+			System.out.println(">> Min ID is: " + lowestId);
+			if (id == lowestId) {
+				System.out.println(">> I'm the transaction sender. Sending transaction...");
 				ZooHelper.createNewNode(zooKeeper, ZooHelper.TRANSACTION_ROOT, new byte[0], CreateMode.PERSISTENT);
+				System.out.println(">> I'm the transaction sender. Transaction sent");
+			}
 
 			// wait for transaction
+			System.out.println(">> Waiting for the transaction...");
 			waitForTransaction(zooKeeper);
+			System.out.println(">> Transaction received");
 
 			// ***START Modified 3PC***
-			new Modified_3PC(zooKeeper, fd, n, id, vote, crashTime, crashRound, out).start(lowestId);
+			System.out.println(">> Starting Modified_3PC with: " + vote + "...");
+			boolean m3pcResult = new Modified_3PC(zooKeeper, fd, out).start(n, id, crashTime, crashRound, vote, lowestId);
+			System.out.println(">> Finished Modified_3PC with: " + m3pcResult);
 		}
 
 	}
 
 	private static void waitForTransaction(ZooKeeper k) {
+		String prefix = ">>> Waiting for the transaction... ";
+		
 		Semaphore sem = new Semaphore(0);
 		try {
+			System.out.println(prefix + "check if transaction was recieved");
 			if (!ZooHelper.checkNodeExistenceAndAddWatcher(k, ZooHelper.TRANSACTION_ROOT, new Watcher() {
 				@Override
 				public void process(WatchedEvent __) {
+					System.out.println(prefix + "transaction recieved. Release lock...");
 					sem.release();
 				}
-			}))
+			})) {
+				System.out.println(prefix + "transaction was not recieved yet. Wait...");
 				sem.acquire();
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
