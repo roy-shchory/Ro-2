@@ -50,7 +50,7 @@ public class ZkConnector {
 	}
 
 	private void recursiveDeleteNode(String path) {
-		if (!ZooHelper.isNodeExist(zookeeper, path))
+		if (ZooHelper.isNodeExist(zookeeper, path))
 			return;
 		
 		List<String> children = new ArrayList<>();
