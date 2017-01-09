@@ -11,7 +11,7 @@ import org.apache.zookeeper.ZooDefs.Ids;
 public class ZooHelper {
 	public static final String EX_ROOT = "/ds";
 
-	public static final String BARRIER_ROOT = EX_ROOT + "/zk_barrier";
+	public static final String BARRIER_ROOT = "/zk_barrier";
 	public static final String FAILURE_DETECTOR_ROOT = EX_ROOT + "/failure_detector";
 	public static final String TRANSACTION_ROOT = EX_ROOT + "/transaction";
 

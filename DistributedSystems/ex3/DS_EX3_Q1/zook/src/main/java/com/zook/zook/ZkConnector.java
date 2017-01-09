@@ -46,19 +46,24 @@ public class ZkConnector {
 	}
 
 	private void init_and_clean() throws KeeperException, InterruptedException {
-		//if (zookeeper.exists(ZooHelper.EX_ROOT, false) != null)
-			//recursiveDeleteNode(ZooHelper.EX_ROOT);
+		recursiveDeleteNode(ZooHelper.EX_ROOT);
 		ZooHelper.createNewNode(zookeeper, ZooHelper.EX_ROOT, new byte[0], CreateMode.PERSISTENT);
 	}
 
 	private void recursiveDeleteNode(String path) {
+		if (!ZooHelper.isNodeExist(zookeeper, path))
+			return;
+		
 		List<String> children = new ArrayList<>();
+		
 		try {
 			children = zookeeper.getChildren(path, false);
 
 			for (String child : children)
 				recursiveDeleteNode(path + "/" + child);
+			
 			zookeeper.delete(path, -1);
+			
 		} catch (InterruptedException | KeeperException e) {
 		}
 	}
