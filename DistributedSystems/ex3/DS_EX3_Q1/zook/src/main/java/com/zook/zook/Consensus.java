@@ -44,7 +44,7 @@ public class Consensus {
 		ConsensusValue myEstimation = ConsensusValue.createConsensusValue(startValue);
 
 		// start while not decided loop:
-		while (decidedValue.isSet()) {
+		while (!decidedValue.isSet()) {
 			// init round params:
 			int coordinatorId = (round % n) + 1;
 			ConsensusValue estimationFromCoordinator = ConsensusValue.NIL;

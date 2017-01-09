@@ -46,9 +46,9 @@ public class ZkConnector {
 	}
 
 	private void init_and_clean() throws KeeperException, InterruptedException {
-		if (zookeeper.exists(ZooHelper.EX_ROOT, false) != null)
-			recursiveDeleteNode(ZooHelper.EX_ROOT);
-		zookeeper.create(ZooHelper.EX_ROOT, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+		//if (zookeeper.exists(ZooHelper.EX_ROOT, false) != null)
+			//recursiveDeleteNode(ZooHelper.EX_ROOT);
+		ZooHelper.createNewNode(zookeeper, ZooHelper.EX_ROOT, new byte[0], CreateMode.PERSISTENT);
 	}
 
 	private void recursiveDeleteNode(String path) {
