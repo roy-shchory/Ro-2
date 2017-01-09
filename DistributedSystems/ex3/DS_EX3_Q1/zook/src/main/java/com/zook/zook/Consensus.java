@@ -2,9 +2,7 @@ package com.zook.zook;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.zookeeper.CreateMode;
@@ -89,6 +87,10 @@ public class Consensus {
 			ConsensusValue step10 = getValueIfAllValuesAreTheSameAndNotNil(votesFromQuorum);
 			if (step10 != null) {
 				decidedValue.setAndRelese(step10.getAsBoolean());
+				// send result to all:
+				ZooHelper.createNewNode(zooKeeper, ZooHelper.RESULT_CONSENSUS_ROOT, step10.getAsByteArray(), CreateMode.PERSISTENT);
+				
+				myEstimation = step10;
 			}
 			
 			// step 11:
@@ -96,11 +98,15 @@ public class Consensus {
 			if (step11 != null) {
 				myEstimation = step11;
 			}
+			
+			printOutEstimation(myEstimation);
 		}
 
 		// return the consensus decision:
-		return decidedValue.getInnerBool(); // can't be null because we exited
-											// the while loop
+		boolean consensusResult = decidedValue.getInnerBool(); // can't be null because we exited
+															   // the while loop
+		printOutEstimation(ConsensusValue.createConsensusValue(consensusResult));
+		return consensusResult;
 	}
 
 	// [start] get result if decided
@@ -218,6 +224,12 @@ public class Consensus {
 		CrashedException.crash(out);
 	}
 	// [end]
+
+	private void printOutEstimation(ConsensusValue myEstimation) throws IOException {
+		out.write(myEstimation == ConsensusValue.TRUE ? "yes" : "no");
+		out.newLine();
+		out.flush();
+	}
 }
 
 enum ConsensusValue {
