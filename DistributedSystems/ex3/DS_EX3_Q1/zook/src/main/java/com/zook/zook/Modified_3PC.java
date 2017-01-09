@@ -26,22 +26,22 @@ public class Modified_3PC {
 			throws CrashedException, IOException, InterruptedException, KeeperException {
 		// ***START 3PC_MODIFIED***
 		// if 0-V, crash!
-		System.out.println(">> Checking if I need to crash... for (0-V) only...");
+		System.out.println(">>> Checking if I need to crash... for (0-V) only...");
 		if (crashRound == 0 && "V".equals(crashTime)) {
-			System.out.println(">> Crashing...");
+			System.out.println(">>> Crashing...");
 			CrashedException.crash(out);
 		}
 
 		// send vote to coordinator (the transaction's sender):
 		byte[] voteData = ZooHelper.bool2byteArray(vote);
-		System.out.println(">> Sending my vote (" + voteData[0] + ") to coordinator (" + coordinatorId + ")...");
+		System.out.println(">>> Sending my vote (" + voteData[0] + ") to coordinator (" + coordinatorId + ")...");
 		ZooHelper.createNewNode(zooKeeper, ZooHelper.VOTES_3PC_ROOT, new byte[0], CreateMode.PERSISTENT);
 		ZooHelper.createNewNode(zooKeeper, ZooHelper.VOTES_3PC_ROOT + "/" + id, voteData, CreateMode.PERSISTENT);
-		System.out.println(">> Vote sent to coordinator");
+		System.out.println(">>> Vote sent to coordinator");
 
 		// only coordinator:
 		if (id == coordinatorId) {
-			String cPrefix = ">> I'm the coordinator - ";
+			String cPrefix = ">>>> I'm the coordinator - ";
 
 			// only coordinator - wait for votes or until new suspicion, and
 			// send results to all:
@@ -54,15 +54,15 @@ public class Modified_3PC {
 		}
 
 		// wait for coordinator results, or until the coordinator's suspicion:
-		System.out.println(">> Wait for vote result from coordinator...");
+		System.out.println(">>> Wait for vote result from coordinator...");
 		boolean consensusInitValue = waitForCoordinatorsResult(coordinatorId);
-		System.out.println(">> Vote result received from coordinator: " + consensusInitValue);
+		System.out.println(">>> Vote result received from coordinator: " + consensusInitValue);
 
 		// ***START CONSENSUS (M&R)***
-		System.out.println(">> Starting consensus with: " + consensusInitValue + "...");
+		System.out.println(">>> Starting consensus with: " + consensusInitValue + "...");
 		boolean consensusResult = new Consensus(zooKeeper, failureDetector, out)
 				.start(n, id, crashTime, crashRound, consensusInitValue);
-		System.out.println(">> Finished consensus with: " + consensusResult);
+		System.out.println(">>> Finished consensus with: " + consensusResult);
 
 		return consensusResult;
 	}

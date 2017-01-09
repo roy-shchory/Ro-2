@@ -12,6 +12,8 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
 public class Consensus {
+	private static final String debugPrefix = ">>>> ";
+	
 	private ZooKeeper zooKeeper;
 	private FailureDetector failureDetector;
 	private BufferedWriter out;
@@ -71,17 +73,17 @@ public class Consensus {
 					estimationFromCoordinator = getVoteFromNode(ROUND_COORDINATOR_VOTE_PATH);
 			}
 
-			// check if need to crash
-			crashMe(round, "B");
-
 			// step 7 - send to all
 			ZooHelper.createNewNode(zooKeeper, ROUND_MY_VOTE_PATH , estimationFromCoordinator.getAsByteArray(), CreateMode.PERSISTENT);
-
+			
 			// check if need to crash
-			crashMe(round, "C");
+			crashMe(round, "B");
 			
 			// step 8, 9 - wait for a majority
 			Set<ConsensusValue> votesFromQuorum = waitForQuorumVote(ROUND_VOTES_PATH, n);
+			
+			// check if need to crash
+			crashMe(round, "C");
 			
 			// step 10:
 			ConsensusValue step10 = getValueIfAllValuesAreTheSameAndNotNil(votesFromQuorum);
@@ -217,10 +219,10 @@ public class Consensus {
 	
 	// [start] crash handlers
 	private void crashMe(int round, final String currentCrashTime) throws CrashedException, IOException {
-		System.out.println(">> Checking if I need to crash... for (R-" + currentCrashTime + ") only...");
+		System.out.println(debugPrefix + "Checking if I need to crash... for (R-" + currentCrashTime + ") only...");
 		if (crashRound != round || !currentCrashTime.equals(crashTime))
 			return;
-		System.out.println(">> Crashing...");
+		System.out.println(debugPrefix + "Crashing...");
 		CrashedException.crash(out);
 	}
 	// [end]
