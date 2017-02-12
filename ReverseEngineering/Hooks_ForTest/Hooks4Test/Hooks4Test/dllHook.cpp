@@ -7,12 +7,12 @@
 
 typedef void(*HOOK_FUNCTION_TYPE)(void);
 
-void setHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction);
-void setIATHook(LPCTSTR exeModuleName, LPCTSTR dllModuleName, LPCSTR functionToHookName, int offsetOfIatEntry, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction);
-void setRegularHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, int bytesToCopy, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction);
+void setHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction, LPVOID* out_realFunctionPtr);
+void setIATHook(LPCTSTR exeModuleName, LPCTSTR dllModuleName, LPCSTR functionToHookName, int offsetOfIatEntry, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction, LPVOID* out_realFunctionPtr);
+void setRegularHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, int bytesToCopy, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction, LPVOID* out_realFunctionPtr);
 
 /**************************************************************************************************
-This pointer will automaticly be set to the start of the real function
+This pointer will be set to the start of the real function
 ***************************************************************************************************/
 LPVOID startOfRealFunction = 0;
 
@@ -41,7 +41,7 @@ COLORREF SetTextColorFake(
 	_In_ COLORREF crColor
 	) {
 	SetTextColorFuncType realFunc = SetTextColorFuncType(startOfRealFunction);
-	return realFunc(hdc, 0x00FF0000);
+	return realFunc(hdc, 0x0000FFFF);
 }
 
 /**************************************************************************************************
@@ -139,7 +139,7 @@ void createHooks() {
 	LPCSTR FUNCTION_TO_HOOK_NAME = "SetTextColor";
 	int MY_HOOK_FUNCTION_JMP_BACK_OFFSET = 0x1f;
 	HOOK_FUNCTION_TYPE MY_HOOK = setColorHook;
-	bool USE_FAKE = false;
+	bool USE_FAKE = true;
 
 	if (USE_FAKE)
 		MY_HOOK = setColorHook_WithFake;
@@ -154,9 +154,9 @@ void createHooks() {
 
 
 
-	//setHook(DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, MY_HOOK, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, USE_FAKE);
-	//setIATHook(EXE_MODULE_NAME, DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, OFFSET_OF_IAT_ENTRY, MY_HOOK, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, USE_FAKE);
-	setRegularHook(DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, BYTES_TO_COPY, MY_HOOK, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, USE_FAKE);
+	//setHook(DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, MY_HOOK, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, USE_FAKE, &startOfRealFunction);
+	//setIATHook(EXE_MODULE_NAME, DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, OFFSET_OF_IAT_ENTRY, MY_HOOK, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, USE_FAKE, &startOfRealFunction);
+	setRegularHook(DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, BYTES_TO_COPY, MY_HOOK, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, USE_FAKE, &startOfRealFunction);
 }
 
 
@@ -211,7 +211,7 @@ void writeJmpOpcodeFromHook(HOOK_FUNCTION_TYPE hookFunc, int offsetInHook, LPVOI
 Hook With HOT-Patching
 ***************************************************************************************************
 ***************************************************************************************************/
-void setHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction) {
+void setHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction, LPVOID* out_realFunctionPtr) {
 	LPVOID f;
 	HMODULE h = GetModuleHandle(dllModuleName);
 	CHAR JmpOpcode[6] = "\xE9\x90\x90\x90\x90";
@@ -241,7 +241,7 @@ void setHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, HOOK_FUNCTION_TYP
 
 	// jump to f from myHook
 	JumpTo = (LPVOID)((char*)f + 2);
-	startOfRealFunction = JumpTo;
+	*out_realFunctionPtr = JumpTo;
 	if (useFakeFunction)
 		return;
 	writeJmpOpcodeFromHook(myHook, jmpBackCmdOffset, JumpTo);
@@ -253,7 +253,7 @@ Hook From IAT
 ***************************************************************************************************/
 void setIATHook(LPCTSTR exeModuleName, LPCTSTR dllModuleName, LPCSTR functionToHookName, 
 	int offsetOfIatEntry, 
-	HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction) {
+	HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction, LPVOID* out_realFunctionPtr) {
 
 	LPVOID f;
 	HMODULE h = GetModuleHandle(exeModuleName);
@@ -280,7 +280,7 @@ void setIATHook(LPCTSTR exeModuleName, LPCTSTR dllModuleName, LPCSTR functionToH
 
 	// jump to f from myHook
 	JumpTo = (LPVOID)((char*)f);
-	startOfRealFunction = JumpTo;
+	*out_realFunctionPtr = JumpTo;
 	if (useFakeFunction)
 		return;
 	writeJmpOpcodeFromHook(myHook, jmpBackCmdOffset, JumpTo);
@@ -449,7 +449,7 @@ __declspec(naked) void tempFunc()
 	}
 }
 
-void setRegularHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, int bytesToCopy, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction) {
+void setRegularHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, int bytesToCopy, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction, LPVOID* out_realFunctionPtr) {
 	LPVOID f;
 	HMODULE h = GetModuleHandle(dllModuleName);
 	CHAR JmpOpcode[BYTES_TO_COPY_MAX];
@@ -490,10 +490,10 @@ void setRegularHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, int bytesT
 	// jump to f from myHook
 	JumpTo = (LPVOID)((char*)f + bytesToCopy);
 	if (useFakeFunction) {
-		startOfRealFunction = &tempFunc;
+		*out_realFunctionPtr = &tempFunc;
 		writeJmpOpcodeFromHook_WithAddedCode(tempFunc, 0, JumpTo, CopiedCode, bytesToCopy);
 	} else {
-		startOfRealFunction = JumpTo;
+		*out_realFunctionPtr = JumpTo;
 		writeJmpOpcodeFromHook_WithAddedCode(myHook, jmpBackCmdOffset, JumpTo, CopiedCode, bytesToCopy);
 	}
 }
