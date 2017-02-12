@@ -7,7 +7,7 @@
 
 typedef void(*HOOK_FUNCTION_TYPE)(void);
 
-void setHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, HOOK_FUNCTION_TYPE myHook, bool useFakeFunction);
+void setHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction);
 void setIATHook(LPCTSTR exeModuleName, LPCTSTR dllModuleName, LPCSTR functionToHookName, int offsetOfIatEntry, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction);
 void setRegularHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, int bytesToCopy, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction);
 
@@ -41,7 +41,7 @@ COLORREF SetTextColorFake(
 	_In_ COLORREF crColor
 	) {
 	SetTextColorFuncType realFunc = SetTextColorFuncType(startOfRealFunction);
-	return realFunc(hdc, 0x00a00eef);
+	return realFunc(hdc, 0x00FF0000);
 }
 
 /**************************************************************************************************
@@ -49,7 +49,7 @@ CAN EDIT THIS
 ---------------------------------------------------------------------------------------------------
 The hooks
 ***************************************************************************************************/
-__declspec(naked) void setColorHook()
+__declspec(naked) void setColorHook_WithFake()
 {    
 	//OutputDebugString(p);
 	__asm {
@@ -64,48 +64,68 @@ __declspec(naked) void setColorHook()
 		call SetTextColorFake
 		add esp, 8
 		ret 8
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
 	}
 }
 
-
-/**************************************************************************************************
-CAN EDIT THIS
----------------------------------------------------------------------------------------------------
-Some MACROS, not really needed - only for createHooks
-***************************************************************************************************/
-// for all hooks
-#define DLL_MODULE_NAME L"gdi32.dll"
-#define FUNCTION_TO_HOOK_NAME "SetTextColor"
-
-#define MY_HOOK_FUNCTION_JMP_BACK_OFFSET 0x1f
-
-// for IAT hook only
-#define EXE_MODULE_NAME L"calc.exe"
-#define OFFSET_OF_IAT_ENTRY 0x1014
-
-// for regular hook only
-#define BYTES_TO_COPY 8 // >= 5
+__declspec(naked) void setColorHook()
+{
+	__asm {
+		nop
+			mov eax, [esp + 0x20]
+			and eax, 0x00FFFFFF
+			mov eax, 0x00000FF0
+			mov[esp + 0x8], eax
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+	}
+}
 
 /**************************************************************************************************
 CAN EDIT THIS
@@ -114,9 +134,29 @@ Create Hooks
 create all the hooks from this function
 ***************************************************************************************************/
 void createHooks() {
-	//setHook(DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, setColorHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, true);
-	//setIATHook(EXE_MODULE_NAME, DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, OFFSET_OF_IAT_ENTRY, setColorHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, true);
-	setRegularHook(DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, BYTES_TO_COPY, setColorHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, true);
+	// for all hooks
+	LPCTSTR DLL_MODULE_NAME = L"gdi32.dll";
+	LPCSTR FUNCTION_TO_HOOK_NAME = "SetTextColor";
+	int MY_HOOK_FUNCTION_JMP_BACK_OFFSET = 0x1f;
+	HOOK_FUNCTION_TYPE MY_HOOK = setColorHook;
+	bool USE_FAKE = false;
+
+	if (USE_FAKE)
+		MY_HOOK = setColorHook_WithFake;
+
+	// for IAT hook only
+	LPCTSTR EXE_MODULE_NAME = L"calc.exe";
+	int OFFSET_OF_IAT_ENTRY = 0x1014;
+
+	// for regular hook only
+	int BYTES_TO_COPY = 8; // >= 5
+
+
+
+
+	//setHook(DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, MY_HOOK, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, USE_FAKE);
+	//setIATHook(EXE_MODULE_NAME, DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, OFFSET_OF_IAT_ENTRY, MY_HOOK, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, USE_FAKE);
+	setRegularHook(DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, BYTES_TO_COPY, MY_HOOK, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, USE_FAKE);
 }
 
 
@@ -454,7 +494,7 @@ void setRegularHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, int bytesT
 		writeJmpOpcodeFromHook_WithAddedCode(tempFunc, 0, JumpTo, CopiedCode, bytesToCopy);
 	} else {
 		startOfRealFunction = JumpTo;
-		writeJmpOpcodeFromHook_WithAddedCode(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo, CopiedCode, bytesToCopy);
+		writeJmpOpcodeFromHook_WithAddedCode(myHook, jmpBackCmdOffset, JumpTo, CopiedCode, bytesToCopy);
 	}
 }
 
