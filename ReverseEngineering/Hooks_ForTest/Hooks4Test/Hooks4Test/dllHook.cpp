@@ -5,6 +5,7 @@
 #include <windows.h>
 #include <stdio.h>
 
+typedef void(*HOOK_FUNCTION_TYPE)(void);
 LPVOID startOfRealFunction = 0;
 
 /**************************************************************************************************
@@ -16,15 +17,13 @@ Change these
 
 #define MY_HOOK_FUNCTION_JMP_BACK_OFFSET 0x1f
 
-#define USE_WARRAPER 1
-
 // for IAT hook only
 #define EXE_MODULE_NAME L"calc.exe"
 #define OFFSET_OF_IAT_ENTRY 0x1014
 
 // for regular hook only
 #define BYTES_TO_COPY 8 // >= 5
-
+#define BYTES_TO_COPY_MAX 20
 
 /**************************************************************************************************
 The fake function - if needed
@@ -36,11 +35,11 @@ COLORREF SetTextColorFake(
 	_In_ COLORREF crColor
 	) {
 	SetTextColorFuncType realFunc = SetTextColorFuncType(startOfRealFunction);
-	return realFunc(hdc, crColor);
+	return realFunc(hdc, 0x00adbeef);
 }
 
 /**************************************************************************************************
-The hook
+The hooks
 ***************************************************************************************************/
 __declspec(naked) void myHook()
 {    
@@ -80,7 +79,17 @@ __declspec(naked) void myHook()
 		nop
 	}
 }
-__declspec(naked) void myHookEnd()        {} 
+
+
+void setHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, HOOK_FUNCTION_TYPE myHook, bool useFakeFunction);
+void setIATHook(LPCTSTR exeModuleName, LPCTSTR dllModuleName, LPCSTR functionToHookName, int offsetOfIatEntry, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction);
+void setRegularHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, int bytesToCopy, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction);
+
+void createHooks() {
+	//setHook(DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, true);
+	//setIATHook(EXE_MODULE_NAME, DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, OFFSET_OF_IAT_ENTRY, myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, true);
+	setRegularHook(DLL_MODULE_NAME, FUNCTION_TO_HOOK_NAME, BYTES_TO_COPY, myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, true);
+}
 
 
 
@@ -102,8 +111,6 @@ DON'T CHANGE ANYTHING FROM THIS POINT
 Some Aux Functions
 ***************************************************************************************************
 ***************************************************************************************************/
-typedef void(*HOOK_FUNCTION_TYPE)(void);
-
 void writeJmpOpcodeFromHook_WithAddedCode(HOOK_FUNCTION_TYPE hookFunc, int offsetInHook, LPVOID jumpToAddr, CHAR* codeToWriteBeforeJMP, int sizeOfCode) {
 	DWORD lpProtect = 0;
 	CHAR  JmpOpcodeWithEAX[8] = "\xB8\x90\x90\x90\x90\xFF\xE0";
@@ -131,9 +138,9 @@ void writeJmpOpcodeFromHook(HOOK_FUNCTION_TYPE hookFunc, int offsetInHook, LPVOI
 Hook With HOT-Patching
 ***************************************************************************************************
 ***************************************************************************************************/
-void setHook() {
+void setHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction) {
 	LPVOID f;
-	HMODULE h = GetModuleHandle(DLL_MODULE_NAME);
+	HMODULE h = GetModuleHandle(dllModuleName);
 	CHAR JmpOpcode[6] = "\xE9\x90\x90\x90\x90";
     DWORD lpProtect = 0;
     LPVOID JumpTo;
@@ -141,12 +148,12 @@ void setHook() {
 	if (h == NULL) {
 		return;
 	}
-	f = GetProcAddress(h , FUNCTION_TO_HOOK_NAME);
+	f = GetProcAddress(h , functionToHookName);
 	if (f == NULL) {
 		return;
 	}
 	// calculate relative jump to myHook from f
-    JumpTo = (LPVOID)((char*)&myHook - (char*)f);
+    JumpTo = (LPVOID)((char*)myHook - (char*)f);
 	memcpy(JmpOpcode + 1, &JumpTo, 0x4);
 
 	// write the jump
@@ -162,19 +169,22 @@ void setHook() {
 	// jump to f from myHook
 	JumpTo = (LPVOID)((char*)f + 2);
 	startOfRealFunction = JumpTo;
-	if (USE_WARRAPER)
+	if (useFakeFunction)
 		return;
-	writeJmpOpcodeFromHook(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo);
+	writeJmpOpcodeFromHook(myHook, jmpBackCmdOffset, JumpTo);
 }
 
 /**************************************************************************************************
 Hook From IAT
 ***************************************************************************************************
 ***************************************************************************************************/
-void setIATHook() {
+void setIATHook(LPCTSTR exeModuleName, LPCTSTR dllModuleName, LPCSTR functionToHookName, 
+	int offsetOfIatEntry, 
+	HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction) {
+
 	LPVOID f;
-	HMODULE h = GetModuleHandle(EXE_MODULE_NAME);
-	HMODULE h2 = GetModuleHandle(DLL_MODULE_NAME);
+	HMODULE h = GetModuleHandle(exeModuleName);
+	HMODULE h2 = GetModuleHandle(dllModuleName);
     DWORD lpProtect = 0;
     LPVOID JumpTo;
 	LPVOID iat;
@@ -183,24 +193,24 @@ void setIATHook() {
 		return;
 	}
 	
-	f = GetProcAddress(h2 , FUNCTION_TO_HOOK_NAME);
+	f = GetProcAddress(h2 , functionToHookName);
 	if (f == NULL) {
 		return;
 	}
 	
-	iat = h + OFFSET_OF_IAT_ENTRY/4;
+	iat = h + offsetOfIatEntry/4;
 
 	// write the address of myHook into the IAT
-	JumpTo = (LPVOID)((char*)&myHook);
+	JumpTo = (LPVOID)((char*)myHook);
 	VirtualProtect((char*)iat, 0x4, PAGE_EXECUTE_READWRITE, &lpProtect);  
 	memcpy(iat, &JumpTo, 0x4);  
 
 	// jump to f from myHook
 	JumpTo = (LPVOID)((char*)f);
 	startOfRealFunction = JumpTo;
-	if (USE_WARRAPER)
+	if (useFakeFunction)
 		return;
-	writeJmpOpcodeFromHook(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo);
+	writeJmpOpcodeFromHook(myHook, jmpBackCmdOffset, JumpTo);
 }
 
 /**************************************************************************************************
@@ -211,11 +221,11 @@ TODO: change BYTES_TO_COPY so it will copy an integer number of commends (must b
 
 This hook will not use hot-patching or the IAT
 
-In REGULAR mode (USE_WARRAPER == 0):
+In REGULAR mode (useFakeFunction == 0):
 BYTES_TO_COPY number of bytes will be copied from the start of the real function
 to the end of the hook (just before jumping back to the rest of the real function)
 
-In USE_WARRAPER mode:
+In useFakeFunction mode:
 BYTES_TO_COPY number of bytes will be copied from the start of the real function
 to tempFunc (a function that will contain the copied commends and a jump to the real function)
 TODO: make sure the number of NOPs in tempFunc is >= BYTES_TO_COPY + 0x7
@@ -366,11 +376,11 @@ __declspec(naked) void tempFunc()
 	}
 }
 
-void setRegularHook() {
+void setRegularHook(LPCTSTR dllModuleName, LPCSTR functionToHookName, int bytesToCopy, HOOK_FUNCTION_TYPE myHook, int jmpBackCmdOffset, bool useFakeFunction) {
 	LPVOID f;
-	HMODULE h = GetModuleHandle(DLL_MODULE_NAME);
-	CHAR JmpOpcode[BYTES_TO_COPY];
-	CHAR CopiedCode[BYTES_TO_COPY]; //run this code before jumping back to the function
+	HMODULE h = GetModuleHandle(dllModuleName);
+	CHAR JmpOpcode[BYTES_TO_COPY_MAX];
+	CHAR CopiedCode[BYTES_TO_COPY_MAX]; //run this code before jumping back to the function
     DWORD lpProtect = 0;
     LPVOID JumpTo;
 	int i;
@@ -379,39 +389,39 @@ void setRegularHook() {
 		return;
 	}
 	
-	f = GetProcAddress(h , FUNCTION_TO_HOOK_NAME);
+	f = GetProcAddress(h , functionToHookName);
 	if (f == NULL) {
 		return;
 	}
 	
 	// copy bytes from the start of f
-	VirtualProtect((char*)f, BYTES_TO_COPY, PAGE_EXECUTE_READWRITE, &lpProtect); // maybe not needed
-	memcpy(CopiedCode, f, BYTES_TO_COPY);
-	VirtualProtect((char*)f, BYTES_TO_COPY, PAGE_EXECUTE_READ, &lpProtect);
+	VirtualProtect((char*)f, bytesToCopy, PAGE_EXECUTE_READWRITE, &lpProtect); // maybe not needed
+	memcpy(CopiedCode, f, bytesToCopy);
+	VirtualProtect((char*)f, bytesToCopy, PAGE_EXECUTE_READ, &lpProtect);
 	
 	// init jmpOpcode - fill with NOPs (not really needed... we jump back after BYTES_TO_COPY)
 	JmpOpcode[0] = '\xE9';
-	for (i = 1; i < BYTES_TO_COPY; ++i) {
+	for (i = 1; i < bytesToCopy; ++i) {
 		JmpOpcode[i] = '\x90';
 	}
 	
 	// calculate relative jump to myHook from f+offset
-    JumpTo = (LPVOID)((char*)&myHook - (char*)f - 0x5);
+    JumpTo = (LPVOID)((char*)myHook - (char*)f - 0x5);
 	memcpy(JmpOpcode + 1, &JumpTo, 0x4);
 
 	// write the jump
-    VirtualProtect((char*)f, BYTES_TO_COPY, PAGE_EXECUTE_READWRITE, &lpProtect);
-	memcpy((char*)f, &JmpOpcode, BYTES_TO_COPY);
-    VirtualProtect((char*)f, BYTES_TO_COPY, PAGE_EXECUTE_READ, &lpProtect);
+    VirtualProtect((char*)f, bytesToCopy, PAGE_EXECUTE_READWRITE, &lpProtect);
+	memcpy((char*)f, &JmpOpcode, bytesToCopy);
+    VirtualProtect((char*)f, bytesToCopy, PAGE_EXECUTE_READ, &lpProtect);
 
 	// jump to f from myHook
-	JumpTo = (LPVOID)((char*)f + BYTES_TO_COPY);
-	if (USE_WARRAPER) {
+	JumpTo = (LPVOID)((char*)f + bytesToCopy);
+	if (useFakeFunction) {
 		startOfRealFunction = &tempFunc;
-		writeJmpOpcodeFromHook_WithAddedCode(tempFunc, 0, JumpTo, CopiedCode, BYTES_TO_COPY);
+		writeJmpOpcodeFromHook_WithAddedCode(tempFunc, 0, JumpTo, CopiedCode, bytesToCopy);
 	} else {
 		startOfRealFunction = JumpTo;
-		writeJmpOpcodeFromHook_WithAddedCode(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo, CopiedCode, BYTES_TO_COPY);
+		writeJmpOpcodeFromHook_WithAddedCode(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo, CopiedCode, bytesToCopy);
 	}
 }
 
