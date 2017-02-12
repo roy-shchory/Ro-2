@@ -5,12 +5,18 @@
 #include <windows.h>
 #include <stdio.h>
 
+LPVOID startOfRealFunction = 0;
+
+/**************************************************************************************************
+Change these
+***************************************************************************************************/
 // for all hooks
 #define DLL_MODULE_NAME L"gdi32.dll"
 #define FUNCTION_TO_HOOK_NAME "SetTextColor"
 
-#define MY_HOOK_FUNCTION_MAX_SIZE 0x100
 #define MY_HOOK_FUNCTION_JMP_BACK_OFFSET 0x1f
+
+#define USE_WARRAPER 1
 
 // for IAT hook only
 #define EXE_MODULE_NAME L"calc.exe"
@@ -19,6 +25,23 @@
 // for regular hook only
 #define BYTES_TO_COPY 8 // >= 5
 
+
+/**************************************************************************************************
+The fake function - if needed
+***************************************************************************************************/
+typedef COLORREF (*SetTextColorFuncType)(_In_ HDC, _In_ COLORREF);
+
+COLORREF SetTextColorFake(
+	_In_ HDC      hdc,
+	_In_ COLORREF crColor
+	) {
+	SetTextColorFuncType realFunc = SetTextColorFuncType(startOfRealFunction);
+	return realFunc(hdc, crColor);
+}
+
+/**************************************************************************************************
+The hook
+***************************************************************************************************/
 __declspec(naked) void myHook()
 {    
 	//OutputDebugString(p);
@@ -27,12 +50,13 @@ __declspec(naked) void myHook()
 		mov eax , [esp+0x20]
 		and eax,0x00FFFFFF
 		mov [esp+0x8], eax
-		nop
-		nop
-		nop
-		nop
-		nop
-		nop
+		mov eax, [esp + 8]
+		push eax
+		mov eax, [esp + 8]
+		push eax
+		call SetTextColorFake
+		add esp, 8
+		ret 8
 		nop
 		nop
 		nop
@@ -58,7 +82,26 @@ __declspec(naked) void myHook()
 }
 __declspec(naked) void myHookEnd()        {} 
 
-// aux functions
+
+
+
+
+/**************************************************************************************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------------------------------------------------------------
+DON'T CHANGE ANYTHING FROM THIS POINT
+---------------------------------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+***************************************************************************************************/
+
+
+
+
+
+/**************************************************************************************************
+Some Aux Functions
+***************************************************************************************************
+***************************************************************************************************/
 typedef void(*HOOK_FUNCTION_TYPE)(void);
 
 void writeJmpOpcodeFromHook_WithAddedCode(HOOK_FUNCTION_TYPE hookFunc, int offsetInHook, LPVOID jumpToAddr, CHAR* codeToWriteBeforeJMP, int sizeOfCode) {
@@ -84,7 +127,10 @@ void writeJmpOpcodeFromHook(HOOK_FUNCTION_TYPE hookFunc, int offsetInHook, LPVOI
 	writeJmpOpcodeFromHook_WithAddedCode(hookFunc, offsetInHook, jumpToAddr, NULL, -1);
 }
 
-// hook with hot-patching
+/**************************************************************************************************
+Hook With HOT-Patching
+***************************************************************************************************
+***************************************************************************************************/
 void setHook() {
 	LPVOID f;
 	HMODULE h = GetModuleHandle(DLL_MODULE_NAME);
@@ -92,7 +138,6 @@ void setHook() {
     DWORD lpProtect = 0;
     LPVOID JumpTo;
 
-	
 	if (h == NULL) {
 		return;
 	}
@@ -116,10 +161,16 @@ void setHook() {
 
 	// jump to f from myHook
 	JumpTo = (LPVOID)((char*)f + 2);
+	startOfRealFunction = JumpTo;
+	if (USE_WARRAPER)
+		return;
 	writeJmpOpcodeFromHook(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo);
 }
 
-// hook from IAT
+/**************************************************************************************************
+Hook From IAT
+***************************************************************************************************
+***************************************************************************************************/
 void setIATHook() {
 	LPVOID f;
 	HMODULE h = GetModuleHandle(EXE_MODULE_NAME);
@@ -146,14 +197,179 @@ void setIATHook() {
 
 	// jump to f from myHook
 	JumpTo = (LPVOID)((char*)f);
+	startOfRealFunction = JumpTo;
+	if (USE_WARRAPER)
+		return;
 	writeJmpOpcodeFromHook(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo);
 }
 
-// regular hook
+/**************************************************************************************************
+Regular Hook
+***************************************************************************************************
+***************************************************************************************************
+TODO: change BYTES_TO_COPY so it will copy an integer number of commends (must be bigger or equal to 5)
+
+This hook will not use hot-patching or the IAT
+
+In REGULAR mode (USE_WARRAPER == 0):
+BYTES_TO_COPY number of bytes will be copied from the start of the real function
+to the end of the hook (just before jumping back to the rest of the real function)
+
+In USE_WARRAPER mode:
+BYTES_TO_COPY number of bytes will be copied from the start of the real function
+to tempFunc (a function that will contain the copied commends and a jump to the real function)
+TODO: make sure the number of NOPs in tempFunc is >= BYTES_TO_COPY + 0x7
+***************************************************************************************************/
+__declspec(naked) void tempFunc()
+{
+	__asm {
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+	}
+}
+
 void setRegularHook() {
 	LPVOID f;
 	HMODULE h = GetModuleHandle(DLL_MODULE_NAME);
-	CHAR JmpOpcode[BYTES_TO_COPY]; // = "\xE9\x90\x90\x90\x90";
+	CHAR JmpOpcode[BYTES_TO_COPY];
 	CHAR CopiedCode[BYTES_TO_COPY]; //run this code before jumping back to the function
     DWORD lpProtect = 0;
     LPVOID JumpTo;
@@ -190,10 +406,12 @@ void setRegularHook() {
 
 	// jump to f from myHook
 	JumpTo = (LPVOID)((char*)f + BYTES_TO_COPY);
-	writeJmpOpcodeFromHook_WithAddedCode(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo, CopiedCode, BYTES_TO_COPY);
+	if (USE_WARRAPER) {
+		startOfRealFunction = &tempFunc;
+		writeJmpOpcodeFromHook_WithAddedCode(tempFunc, 0, JumpTo, CopiedCode, BYTES_TO_COPY);
+	} else {
+		startOfRealFunction = JumpTo;
+		writeJmpOpcodeFromHook_WithAddedCode(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo, CopiedCode, BYTES_TO_COPY);
+	}
 }
 
-// hook with hot-patching and wrapper
-void setHookWrapper() {
-	
-}
