@@ -14,7 +14,7 @@
 
 // for IAT hook only
 #define EXE_MODULE_NAME L"calc.exe"
-#define OFFSET_OF_IAT_ENTRY 0x1234
+#define OFFSET_OF_IAT_ENTRY 0x1014
 
 // for regular hook only
 #define BYTES_TO_COPY 8 // >= 5
@@ -61,27 +61,34 @@ __declspec(naked) void myHookEnd()        {}
 // aux functions
 typedef void(*HOOK_FUNCTION_TYPE)(void);
 
-void makeJmpOpcode(CHAR* opcodeArray, LPVOID adder) {
-	// size(opcodeArray) >= 5
-	opcodeArray[0] = '\xE9';
-	memcpy(opcodeArray + 1, &adder, 0x4);
+void writeJmpOpcodeFromHook_WithAddedCode(HOOK_FUNCTION_TYPE hookFunc, int offsetInHook, LPVOID jumpToAddr, CHAR* codeToWriteBeforeJMP, int sizeOfCode) {
+	DWORD lpProtect = 0;
+	CHAR  JmpOpcodeWithEAX[8] = "\xB8\x90\x90\x90\x90\xFF\xE0";
+	int sizeOfAddedCode = 0;
+
+	if (codeToWriteBeforeJMP != NULL && sizeOfCode > 0) {
+		sizeOfAddedCode = sizeOfCode;
+	}
+
+	memcpy(JmpOpcodeWithEAX + 1, &jumpToAddr, 0x4);
+
+	VirtualProtect((char*)hookFunc + offsetInHook, 0x7 + sizeOfAddedCode, PAGE_EXECUTE_READWRITE, &lpProtect);
+	if (sizeOfAddedCode > 0) {
+		memcpy((char*)hookFunc + offsetInHook, codeToWriteBeforeJMP, sizeOfAddedCode);
+	}
+	memcpy((char*)hookFunc + offsetInHook + sizeOfAddedCode, &JmpOpcodeWithEAX, 0x7);
+	VirtualProtect((char*)hookFunc + offsetInHook, 0x7 + sizeOfAddedCode, PAGE_EXECUTE_READ, &lpProtect);
 }
 
-void add_jmp_back_from_hook(HOOK_FUNCTION_TYPE hookFunc, int offsetInHook, LPVOID jumpBackAddr) {
-	DWORD lpProtect = 0;
-	CHAR opcodeArray[5];
-
-	makeJmpOpcode(opcodeArray, jumpBackAddr);
-	VirtualProtect((char*)hookFunc + offsetInHook, 0x5, PAGE_EXECUTE_READWRITE, &lpProtect);
-	memcpy((char*)hookFunc + MY_HOOK_FUNCTION_JMP_BACK_OFFSET, &opcodeArray, 0x5);
-	VirtualProtect((char*)hookFunc + offsetInHook, 0x5, PAGE_EXECUTE_READ, &lpProtect);
+void writeJmpOpcodeFromHook(HOOK_FUNCTION_TYPE hookFunc, int offsetInHook, LPVOID jumpToAddr) {
+	writeJmpOpcodeFromHook_WithAddedCode(hookFunc, offsetInHook, jumpToAddr, NULL, -1);
 }
 
 // hook with hot-patching
 void setHook() {
 	LPVOID f;
 	HMODULE h = GetModuleHandle(DLL_MODULE_NAME);
-	CHAR JmpOpcode[5];
+	CHAR JmpOpcode[6] = "\xE9\x90\x90\x90\x90";
     DWORD lpProtect = 0;
     LPVOID JumpTo;
 
@@ -95,7 +102,7 @@ void setHook() {
 	}
 	// calculate relative jump to myHook from f
     JumpTo = (LPVOID)((char*)&myHook - (char*)f);
-	makeJmpOpcode(JmpOpcode, JumpTo);
+	memcpy(JmpOpcode + 1, &JumpTo, 0x4);
 
 	// write the jump
     VirtualProtect((char*)f-5, 0x7, PAGE_EXECUTE_READWRITE, &lpProtect);  
@@ -109,7 +116,7 @@ void setHook() {
 
 	// jump to f from myHook
 	JumpTo = (LPVOID)((char*)f + 2);
-	add_jmp_back_from_hook(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo);
+	writeJmpOpcodeFromHook(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo);
 }
 
 // hook from IAT
@@ -117,10 +124,7 @@ void setIATHook() {
 	LPVOID f;
 	HMODULE h = GetModuleHandle(EXE_MODULE_NAME);
 	HMODULE h2 = GetModuleHandle(DLL_MODULE_NAME);
-	CHAR  JmpOpcode[6] = "\xE9\x90\x90\x90\x90";  
-    CHAR  JmpOpcode2[8] = "\xB8\x90\x90\x90\x90\xFF\xE0";  
     DWORD lpProtect = 0;
-    LPVOID CalculatedJump;
     LPVOID JumpTo;
 	LPVOID iat;
 
@@ -142,10 +146,7 @@ void setIATHook() {
 
 	// jump to f from myHook
 	JumpTo = (LPVOID)((char*)f);
-	memcpy(JmpOpcode2 + 1, &f, 0x4);  
-	VirtualProtect((char*)myHook, MY_HOOK_FUNCTION_MAX_SIZE, PAGE_EXECUTE_READWRITE, &lpProtect); 
-	memcpy((char*)&myHook + MY_HOOK_FUNCTION_JMP_BACK_OFFSET, &JmpOpcode2, 0x7);
-    VirtualProtect((char*)myHook, MY_HOOK_FUNCTION_MAX_SIZE, PAGE_EXECUTE_READ, &lpProtect);
+	writeJmpOpcodeFromHook(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo);
 }
 
 // regular hook
@@ -154,7 +155,6 @@ void setRegularHook() {
 	HMODULE h = GetModuleHandle(DLL_MODULE_NAME);
 	CHAR JmpOpcode[BYTES_TO_COPY]; // = "\xE9\x90\x90\x90\x90";
 	CHAR CopiedCode[BYTES_TO_COPY]; //run this code before jumping back to the function
-    CHAR JmpOpcode2[6] = "\xE9\x90\x90\x90\x90";
     DWORD lpProtect = 0;
     LPVOID JumpTo;
 	int i;
@@ -190,12 +190,7 @@ void setRegularHook() {
 
 	// jump to f from myHook
 	JumpTo = (LPVOID)((char*)f + BYTES_TO_COPY);
-	memcpy(JmpOpcode2 + 1, &JumpTo, 0x4);
-	
-	VirtualProtect((char*)myHook, MY_HOOK_FUNCTION_MAX_SIZE, PAGE_EXECUTE_READWRITE, &lpProtect);
-	memcpy((char*)&myHook + MY_HOOK_FUNCTION_JMP_BACK_OFFSET, &CopiedCode, BYTES_TO_COPY);
-	memcpy((char*)&myHook + MY_HOOK_FUNCTION_JMP_BACK_OFFSET + BYTES_TO_COPY, &JmpOpcode2, 0x5);
-    VirtualProtect((char*)myHook, MY_HOOK_FUNCTION_MAX_SIZE, PAGE_EXECUTE_READ, &lpProtect);   
+	writeJmpOpcodeFromHook_WithAddedCode(myHook, MY_HOOK_FUNCTION_JMP_BACK_OFFSET, JumpTo, CopiedCode, BYTES_TO_COPY);
 }
 
 // hook with hot-patching and wrapper
